@@ -19,6 +19,8 @@ D:\Windows\xampp\php\php.exe tools\komodo_smoke.php
 
 **Note:** Keep the `$pageMap` list in `komodo_smoke.php` aligned with `public/index.php` when routes change.
 
+The core file checklist includes `app/lib/market_data_queries.php` (Market Data import coverage helpers).
+
 ---
 
 ## `tools/komodo_db_check.php`

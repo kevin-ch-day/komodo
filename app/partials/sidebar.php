@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 $nav = [
     'dashboard' => 'Dashboard',
+    'companies' => 'Companies',
     'dataset' => 'Dataset',
     'events' => 'Events',
     'market-data' => 'Market Data',

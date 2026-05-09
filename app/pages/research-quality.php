@@ -11,21 +11,31 @@ $researchViews = $ctx['research_views'];
 ?>
 <section class="panel shell-section" aria-labelledby="rq-heading">
     <h2 id="rq-heading">Research quality</h2>
-    <p class="section-lead">QA and edge-case diagnostic views.</p>
+    <p class="section-lead">QA and edge-case diagnostic views. Primary labels are analyst-facing; technical view names remain available for audit traceability.</p>
     <div class="table-scroll">
         <table class="data-table">
             <thead>
                 <tr>
-                    <th scope="col">View</th>
+                    <th scope="col">Diagnostic</th>
                     <th scope="col" class="num">Rows</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($researchViews as $viewKey) {
                     $ref = KOMODO_OFFLINE_VIEW_REFERENCE[$viewKey] ?? null;
+                    $primary = komodo_label($viewKey, 'db_object');
+                    $desc = komodo_describe($viewKey, 'db_object');
                     ?>
                     <tr>
-                        <td><code class="inline-code"><?= komodo_e($viewKey) ?></code></td>
+                        <td>
+                            <div class="label-stack">
+                                <span class="label-primary"><?= komodo_e($primary) ?></span>
+                                <?php if ($desc !== null) { ?>
+                                    <span class="label-desc"><?= komodo_e($desc) ?></span>
+                                <?php } ?>
+                                <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e($viewKey) ?></code></span>
+                            </div>
+                        </td>
                         <td class="num"><?php echo komodo_metric_html($offlineMode, $liveMerged, $viewKey, $ref); ?></td>
                     </tr>
                 <?php } ?>
