@@ -7,6 +7,24 @@ app/config/local.php
 cache/
 tmp/
 
-# Database exports and dumps (do not commit real exports)
+# Archives — do not commit project snapshots bundled as archives
+*.zip
+*.7z
+*.tar
+*.tar.gz
+
+# Database dumps and export trees (sql/ may keep reference snippets — avoid blanket *.sql)
 dumps/
+backups/
+exports/
 *.dump.sql
+*.backup.sql
+*.sql.gz
+*_database_*.sql
+*_prod.sql
+
+# IDE / OS clutter
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
