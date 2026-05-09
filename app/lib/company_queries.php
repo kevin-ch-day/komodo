@@ -462,6 +462,24 @@ function komodo_attention_row(array $r): array
  *   trace_sources: list<string>
  * }
  */
+function komodo_company_context_invalid_id(): array
+{
+    return [
+        'available' => false,
+        'partial' => false,
+        'mode' => 'invalid',
+        'message' => 'Invalid company id.',
+        'errors' => [],
+        'not_found' => false,
+        'company_id' => 0,
+        'profile' => null,
+        'securities' => [],
+        'events' => [],
+        'summary' => null,
+        'trace_sources' => komodo_company_trace_sources(),
+    ];
+}
+
 function komodo_build_company_context(?PDO $pdo, array $baseContext, int $companyId): array
 {
     unset($baseContext);

@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 /**
- * CLI structural smoke test for Komodo (v0.2).
- * Mirrors routing expectations from public/index.php — keep routes in sync manually.
+ * CLI structural smoke test for Komodo (v0.0.2).
+ * Route keys come from app/config/pages.php (same source as public/index.php).
  */
 
 $root = dirname(__DIR__);
+require_once $root . '/app/config/pages.php';
+
 $fail = false;
 
 $f = static function (string $msg) use (&$fail): void {
@@ -26,12 +28,17 @@ $relPath = static function (string $rel) use ($root): string {
 $coreFiles = [
     'public/index.php',
     'index.php',
+    'app/config/pages.php',
     'app/config/database.php',
     'app/config/local.example.php',
     'app/lib/dashboard_queries.php',
     'app/lib/company_queries.php',
     'app/lib/market_data_queries.php',
     'app/lib/label_helpers.php',
+    'app/lib/view_helpers.php',
+    'app/lib/request_helpers.php',
+    'app/lib/page_context.php',
+    'app/lib/event_queries.php',
     'app/lib/dashboard_context.php',
     'app/partials/layout.php',
     'app/partials/sidebar.php',
@@ -58,17 +65,17 @@ foreach ($coreFiles as $rel) {
     }
 }
 
-$pageMap = [
-    'dashboard' => $relPath('app/pages/dashboard.php'),
-    'companies' => $relPath('app/pages/companies.php'),
-    'company' => $relPath('app/pages/company.php'),
-    'dataset' => $relPath('app/pages/dataset.php'),
-    'events' => $relPath('app/pages/events.php'),
-    'market-data' => $relPath('app/pages/market-data.php'),
-    'research-quality' => $relPath('app/pages/research-quality.php'),
-    'data-gaps' => $relPath('app/pages/data-gaps.php'),
-    'pipeline' => $relPath('app/pages/pipeline.php'),
-];
+$pageMap = [];
+foreach (komodo_page_routes() as $key => $meta) {
+    $pageMap[$key] = $relPath($meta['template']);
+}
+$nf = komodo_not_found_page();
+$nfAbs = $relPath($nf['template']);
+if (is_file($nfAbs)) {
+    $p('not-found template exists: ' . $nf['template']);
+} else {
+    $f('missing not-found template: ' . $nf['template']);
+}
 
 foreach ($pageMap as $key => $abs) {
     if (isset($pageMap[$key]) && is_file($abs)) {
@@ -84,6 +91,15 @@ foreach ($unknownKeys as $uk) {
         $p('unknown page key "' . $uk . '" is not routeable');
     } else {
         $f('unknown page key "' . $uk . '" incorrectly appears in map');
+    }
+}
+
+$routes = komodo_page_routes();
+foreach (komodo_sidebar_nav_keys() as $navKey) {
+    if (isset($routes[$navKey])) {
+        $p('sidebar nav key "' . $navKey . '" exists in komodo_page_routes()');
+    } else {
+        $f('sidebar nav key "' . $navKey . '" missing from komodo_page_routes()');
     }
 }
 

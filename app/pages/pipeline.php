@@ -11,7 +11,7 @@ $pipelineNarrative = $ctx['pipeline_narrative'];
 ?>
 <section class="panel shell-section panel-muted" aria-labelledby="pipe-heading">
     <h2 id="pipe-heading">Pipeline</h2>
-    <p class="section-lead">Roadmap and workflow narrative for the event-study database build-out.</p>
+    <p class="section-lead">Read-only roadmap and workflow narrative for cybersecurity–finance event-study database build-out (external data loads and estimation happen outside Komodo).</p>
 
     <div class="overview-workflow overview-workflow--spaced panel-nested panel-phase--inset">
         <h3 class="overview-phase-heading">Current phase</h3>

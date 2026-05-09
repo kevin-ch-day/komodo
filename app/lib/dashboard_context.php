@@ -26,7 +26,7 @@ const KOMODO_OFFLINE_TABLE_REFERENCE = [
     'event_study_results' => 0,
 ];
 
-const KOMODO_APP_VERSION = '0.2';
+const KOMODO_APP_VERSION = '0.0.2';
 
 /**
  * Offline analytical view counts (documentation snapshots).
@@ -124,7 +124,7 @@ function komodo_dashboard_banners(string $status, bool $partialMetrics, string $
     } elseif ($status === 'connected') {
         $banners[] = ['type' => 'success', 'text' => 'Live database mode.'];
         if ($partialMetrics) {
-            $banners[] = ['type' => 'warn', 'text' => 'Some dashboard metrics could not be loaded.'];
+            $banners[] = ['type' => 'warn', 'text' => 'Some portal metrics could not be loaded.'];
         }
     }
 
@@ -159,8 +159,8 @@ function komodo_dashboard_workflow_phase(string $connStatus, array $tables): arr
     ) {
         return [
             'id' => 'market_import_prep',
-            'title' => 'Market Data Import Preparation',
-            'rationale' => 'Core cyber-event metadata, market calendar, event windows, and QA/readiness views exist, but security and index price tables are still empty.',
+            'title' => 'Price import readiness (external loads)',
+            'rationale' => 'Core cyber-event metadata, market calendar, event windows, and QA views exist, but benchmark index and security daily price tables are still empty — use an external pipeline to load prices; Komodo stays read-only.',
         ];
     }
 
@@ -168,8 +168,8 @@ function komodo_dashboard_workflow_phase(string $connStatus, array $tables): arr
         if (($runs === null || $runs === 0) && ($results === null || $results === 0)) {
             return [
                 'id' => 'event_study_prep',
-                'title' => 'Event Study Preparation',
-                'rationale' => 'Price history is loading or present; validate windows and QA flags, then execute event studies.',
+                'title' => 'Event-study preparation',
+                'rationale' => 'Price history is loading or present; validate windows, source provenance, and QA flags here, then run event-study estimation outside Komodo.',
             ];
         }
 
@@ -182,8 +182,8 @@ function komodo_dashboard_workflow_phase(string $connStatus, array $tables): arr
 
     return [
         'id' => 'core_dataset',
-        'title' => 'Core Dataset Build',
-        'rationale' => 'Continue aligning core identifiers, cyber events, and calendar scaffolding until import and window views stabilize.',
+        'title' => 'Core dataset build',
+        'rationale' => 'Continue aligning core identifiers, cyber events, and calendar scaffolding until market and window views stabilize for cybersecurity–finance research.',
     ];
 }
 
@@ -209,7 +209,7 @@ function komodo_dashboard_next_actions(string $connStatus, array $tables, bool $
     }
 
     if ($partial && $connStatus === 'connected') {
-        $actions[] = 'Repair or restore failing views/tables referenced on this dashboard.';
+        $actions[] = 'Repair or restore failing views/tables referenced in this portal.';
         $actions[] = 'Refresh after GRANT/select access or DDL fixes.';
     }
 
@@ -223,11 +223,11 @@ function komodo_dashboard_next_actions(string $connStatus, array $tables, bool $
     $runs = komodo_int_if_ok($tables, 'event_study_runs');
 
     if ($idxPx !== null && $idxPx === 0) {
-        $actions[] = 'Import index_daily_prices for benchmark indexes.';
+        $actions[] = 'Pending data load: benchmark index prices (e.g. into index_daily_prices) via your external pipeline — Komodo does not write rows.';
     }
 
     if ($secPx !== null && $secPx === 0) {
-        $actions[] = 'Import security_daily_prices for event-linked securities.';
+        $actions[] = 'Pending data load: security prices for event-linked names (e.g. into security_daily_prices) via your external pipeline.';
     }
 
     if ($sources !== null && $sources === 0) {
@@ -236,7 +236,7 @@ function komodo_dashboard_next_actions(string $connStatus, array $tables, bool $
 
     if (($runs === null || $runs === 0)
         && $secPx !== null && $idxPx !== null && ($secPx > 0 || $idxPx > 0)) {
-        $actions[] = 'Run event-study analysis after minimum price coverage is confirmed.';
+        $actions[] = 'After minimum price coverage is confirmed, run event-study estimation in your research environment — not from this portal.';
     }
 
     if ($secPx !== null && $idxPx !== null && ($secPx > 0 || $idxPx > 0)) {
@@ -259,8 +259,8 @@ function komodo_build_gap_rows(bool $offlineMode, array $tables): array
 {
     if ($offlineMode) {
         return [
-            ['Security daily prices', 'security_daily_prices — empty prior to import (offline reference only).'],
-            ['Index daily prices', 'index_daily_prices — empty prior to import (offline reference only).'],
+            ['Security daily prices', 'security_daily_prices — empty pending external load (offline reference only).'],
+            ['Index daily prices', 'index_daily_prices — empty pending external load (offline reference only).'],
             ['Event sources', 'cyber_event_sources — populate for provenance.'],
             ['Event study outputs', 'event_study_runs / event_study_results — empty prior to pipelines.'],
         ];
@@ -372,7 +372,7 @@ function komodo_metric_badge(bool $offlineMode, array $live, string $key): array
         return ['class' => 'badge badge--zero', 'text' => 'Zero rows'];
     }
 
-    return ['class' => 'badge badge--ready', 'text' => 'Ready'];
+    return ['class' => 'badge badge--ready', 'text' => 'Count OK'];
 }
 
 /**
@@ -431,11 +431,11 @@ function komodo_phase_status_lines(string $connState, string $phaseId, array $ta
 
     switch ($phaseId) {
         case 'market_import_prep':
-            $lines[] = 'Market Data Import Preparation — core events and calendar are populated; price history is still empty.';
-            $lines[] = 'Price data missing — plan security and benchmark index imports next.';
+            $lines[] = 'Price import readiness — core events and calendar are populated; benchmark and security price tables are still empty.';
+            $lines[] = 'Next: load benchmark index prices, then event-linked security prices, outside Komodo — see Market Data for coverage QA.';
             break;
         case 'event_study_prep':
-            $lines[] = 'Event Study Preparation — some market data exists; validate windows before running studies.';
+            $lines[] = 'Event-study preparation — some market data exists; validate windows and provenance before running estimation outside Komodo.';
             break;
         case 'analysis_review':
             $lines[] = 'Results Review — reconcile stored runs/results with QA and contamination signals.';
@@ -477,7 +477,7 @@ function komodo_pipeline_narrative(string $connState, array $tables, bool $offli
     if ($offlineMode || $connState !== 'connected') {
         return [
             'MariaDB connection is not live — treat pipeline wording as orientation, not telemetry.',
-            'After local.php validates, this section summarizes import, provenance, and analysis gates from live counts.',
+            'After local.php validates, this section summarizes external data loads, source provenance, and analysis gates from live counts.',
         ];
     }
 
@@ -485,30 +485,30 @@ function komodo_pipeline_narrative(string $connState, array $tables, bool $offli
 
     $events = komodo_int_if_ok($tables, 'cyber_events');
     $lines[] = $events !== null && $events > 0
-        ? 'Cyber event identifiers and linkage tables carry rows — editing should stay out of Komodo UI (read-only dashboards only).'
+        ? 'Cyber event identifiers and linkage tables carry rows — data changes stay outside this read-only research portal.'
         : 'Cyber event metadata still thin — stabilize core events before expanding market or QA overlays.';
 
     $mcal = komodo_int_if_ok($tables, 'market_calendar');
     $lines[] = $mcal !== null && $mcal > 0
         ? 'Market calendar is populated — anchors expected US trading spans for downstream price QA.'
-        : 'Market calendar is missing or unreadable — fix DDL or GRANT paths before interpreting import views.';
+        : 'Market calendar is missing or unreadable — fix DDL or GRANT paths before interpreting market-data plan views.';
 
     $secPx = komodo_int_if_ok($tables, 'security_daily_prices');
     $idxPx = komodo_int_if_ok($tables, 'index_daily_prices');
     if ($secPx !== null && $idxPx !== null && $secPx === 0 && $idxPx === 0) {
-        $lines[] = 'Daily price ingestion has not landed — securities and benchmarks still show zero rows.';
-        $lines[] = 'Price import is the immediate near-term bottleneck before event-window QA at scale.';
+        $lines[] = 'Daily price loads have not landed — securities and benchmarks still show zero rows.';
+        $lines[] = 'External benchmark and security price loads are the near-term bottleneck before event-window QA at scale.';
     } elseif (($secPx !== null && $secPx === 0) xor ($idxPx !== null && $idxPx === 0)) {
-        $lines[] = 'Price coverage is asymmetric — reconcile security vs benchmark index imports.';
+        $lines[] = 'Security price coverage is asymmetric — reconcile issuer vs benchmark index series after external loads.';
     } elseif ($secPx !== null && $idxPx !== null && $secPx > 0 && $idxPx > 0) {
-        $lines[] = 'Both issuer and benchmark price tables contain rows — run coverage QA vs import targets.';
+        $lines[] = 'Both issuer and benchmark price tables contain rows — run coverage QA against import-plan targets.';
     }
 
     $src = komodo_int_if_ok($tables, 'cyber_event_sources');
     $lines[] = match (true) {
         $src === null => 'Provenance telemetry unavailable — rerun counts after fixing SELECT access.',
-        $src === 0 => 'cyber_event_sources is empty — add provenance before publishing results.',
-        default => 'Source provenance: rows exist — continue expanding cyber_event_sources with every ingestion batch.',
+        $src === 0 => 'cyber_event_sources is empty — add provenance rows outside Komodo before publishing research results.',
+        default => 'Source provenance: rows exist — continue expanding cyber_event_sources with each external ingestion batch.',
     };
 
     $runs = komodo_int_if_ok($tables, 'event_study_runs');
@@ -553,7 +553,7 @@ function komodo_calendar_overview_badge(bool $offlineMode, array $live): array
         return ['class' => 'badge badge--zero', 'text' => 'Incomplete'];
     }
 
-    return ['class' => 'badge badge--ready', 'text' => 'Ready'];
+    return ['class' => 'badge badge--ready', 'text' => 'Populated'];
 }
 
 /**
@@ -579,7 +579,7 @@ function komodo_price_overview_badge(bool $offlineMode, array $live): array
     }
 
     if ($sec === 0 && $idx === 0) {
-        return ['class' => 'badge badge--zero-muted', 'text' => 'Awaiting import'];
+        return ['class' => 'badge badge--zero-muted', 'text' => 'Pending load'];
     }
 
     if (($sec === 0) xor ($idx === 0)) {

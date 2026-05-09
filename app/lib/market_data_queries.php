@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Read-only market import coverage helpers (vw_market_data_import_plan + price aggregates).
+ * Read-only market / price coverage helpers (vw_market_data_import_plan + price aggregates).
  */
 
 /**
@@ -24,7 +24,8 @@ declare(strict_types=1);
  *   data_sources: list<array<string, mixed>>,
  *   top_problem_securities: list<array<string, mixed>>,
  *   insights: array<string, mixed>,
- *   notes_preview: list<array{ticker_symbol: string, import_notes: string}>
+ *   notes_preview: list<array{ticker_symbol: string, import_notes: string}>,
+ *   price_import_readiness: ?array<string, mixed>
  * }
  */
 function komodo_build_market_data_context(?PDO $pdo, array $baseContext): array
@@ -32,7 +33,7 @@ function komodo_build_market_data_context(?PDO $pdo, array $baseContext): array
     unset($baseContext);
 
     $offlineInsights = [
-        'headline' => 'Connect MariaDB with app/config/local.php to evaluate import windows and benchmark coverage.',
+        'headline' => 'Connect MariaDB with app/config/local.php to evaluate suggested price windows and benchmark coverage.',
         'pct_securities_not_started' => null,
         'pct_covers_suggested_window' => null,
         'index_load_stage' => 'unknown',
@@ -58,6 +59,7 @@ function komodo_build_market_data_context(?PDO $pdo, array $baseContext): array
         'top_problem_securities' => [],
         'insights' => $offlineInsights,
         'notes_preview' => [],
+        'price_import_readiness' => null,
     ];
 
     if ($pdo === null) {
@@ -111,6 +113,8 @@ function komodo_build_market_data_context(?PDO $pdo, array $baseContext): array
 
     $insights = komodo_market_data_insights($securitySummary, $indexSummary);
 
+    $priceImportReadiness = komodo_market_price_import_readiness($securitySummary, $indexSummary);
+
     $mode = $partial ? 'partial' : 'live';
     $message = $partial
         ? 'Some market data coverage sections could not be loaded.'
@@ -130,7 +134,300 @@ function komodo_build_market_data_context(?PDO $pdo, array $baseContext): array
         'top_problem_securities' => $topProblems,
         'insights' => $insights,
         'notes_preview' => $notesPreview,
+        'price_import_readiness' => $priceImportReadiness,
     ];
+}
+
+/**
+ * Price import readiness for event-study prep (no SQL — uses existing summaries).
+ *
+ * @param array<string, mixed>|null $securitySummary
+ * @param array<string, mixed>|null $indexSummary
+ *
+ * @return array{
+ *   overall: array{state: string, label: string, badge_class: string},
+ *   benchmark: array{state: string, label: string, badge_class: string, dek: string, technical: list<string>},
+ *   event_linked: array{state: string, label: string, badge_class: string, dek: string, technical: list<string>},
+ *   comparison: array{state: string, label: string, badge_class: string, dek: string, technical: list<string>},
+ *   notes_count: int,
+ *   next_action: string
+ * }
+ */
+function komodo_market_price_import_readiness(?array $securitySummary, ?array $indexSummary): array
+{
+    $notesCount = is_array($securitySummary) ? (int) ($securitySummary['securities_with_import_notes'] ?? 0) : 0;
+
+    $benchmark = komodo_readiness_benchmark_indexes($indexSummary);
+    $eventLinked = komodo_readiness_security_role($securitySummary, 'event_linked_security');
+    $comparison = komodo_readiness_security_role($securitySummary, 'comparison_or_unlinked_security');
+
+    $eventSatisfied = komodo_price_import_role_pipeline_satisfied($eventLinked);
+    $compSatisfied = komodo_price_import_role_pipeline_satisfied($comparison);
+
+    $benchmarkLoaded = !$benchmark['summary_missing'] && $benchmark['state'] === 'loaded';
+
+    $overallState = 'partial';
+    $overallLabel = 'Partial';
+    $overallBadge = 'coverage-badge--partial';
+
+    if ($benchmark['summary_missing']) {
+        $overallBadge = 'coverage-badge--unknown';
+    } elseif ($benchmark['state'] === 'not_started') {
+        $overallState = 'not_started';
+        $overallLabel = 'Not started';
+        $overallBadge = 'coverage-badge--not-started';
+    } elseif ($benchmarkLoaded && $eventSatisfied && $compSatisfied) {
+        $overallState = 'ready';
+        $overallLabel = 'Prepared for QA';
+        $overallBadge = 'coverage-badge--ok';
+    }
+
+    $nextAction = komodo_price_import_next_action($benchmark, $eventLinked, $comparison);
+
+    return [
+        'overall' => [
+            'state' => $overallState,
+            'label' => $overallLabel,
+            'badge_class' => $overallBadge,
+        ],
+        'benchmark' => $benchmark,
+        'event_linked' => $eventLinked,
+        'comparison' => $comparison,
+        'notes_count' => $notesCount,
+        'next_action' => $nextAction,
+    ];
+}
+
+/**
+ * @param array<string, mixed>|null $indexSummary
+ *
+ * @return array{state: string, label: string, badge_class: string, dek: string, technical: list<string>, total_indexes: int, with_prices: int, summary_missing: bool}
+ */
+function komodo_readiness_benchmark_indexes(?array $indexSummary): array
+{
+    $technical = ['index_daily_prices', 'market_indexes'];
+    if ($indexSummary === null) {
+        return [
+            'state' => 'unavailable',
+            'label' => 'Unavailable',
+            'badge_class' => 'coverage-badge--unknown',
+            'dek' => 'Index summary could not be computed.',
+            'technical' => $technical,
+            'total_indexes' => 0,
+            'with_prices' => 0,
+            'summary_missing' => true,
+        ];
+    }
+
+    $total = (int) ($indexSummary['total_indexes'] ?? 0);
+    $with = (int) ($indexSummary['indexes_with_any_prices'] ?? 0);
+
+    if ($total === 0) {
+        return [
+            'state' => 'unavailable',
+            'label' => 'Unavailable',
+            'badge_class' => 'coverage-badge--unknown',
+            'dek' => 'No benchmark indexes are defined — add market index rows before loading index_daily_prices.',
+            'technical' => $technical,
+            'total_indexes' => 0,
+            'with_prices' => 0,
+            'summary_missing' => false,
+        ];
+    }
+
+    if ($with === 0) {
+        return [
+            'state' => 'not_started',
+            'label' => 'Not started',
+            'badge_class' => 'coverage-badge--not-started',
+            'dek' => sprintf('%d benchmark index(es) in scope; no rows loaded in index_daily_prices yet.', $total),
+            'technical' => $technical,
+            'total_indexes' => $total,
+            'with_prices' => 0,
+            'summary_missing' => false,
+        ];
+    }
+
+    if ($with < $total) {
+        return [
+            'state' => 'partial',
+            'label' => 'Partial coverage',
+            'badge_class' => 'coverage-badge--partial',
+            'dek' => sprintf('%d of %d benchmark index(es) have price bars — finish remaining series first.', $with, $total),
+            'technical' => $technical,
+            'total_indexes' => $total,
+            'with_prices' => $with,
+            'summary_missing' => false,
+        ];
+    }
+
+    return [
+        'state' => 'loaded',
+        'label' => 'Benchmark series loaded',
+        'badge_class' => 'coverage-badge--ok',
+        'dek' => sprintf('All %d benchmark index(es) have price data in index_daily_prices.', $total),
+        'technical' => $technical,
+        'total_indexes' => $total,
+        'with_prices' => $with,
+        'summary_missing' => false,
+    ];
+}
+
+/**
+ * @param array<string, mixed>|null $securitySummary
+ *
+ * @return array{state: string, label: string, badge_class: string, dek: string, technical: list<string>, total: int, covers: int, not_started: int, summary_missing: bool, bucket_missing: bool}
+ */
+function komodo_readiness_security_role(?array $securitySummary, string $roleKey): array
+{
+    $technical = ['security_daily_prices', 'vw_market_data_import_plan', 'vw_security_price_import_targets'];
+    if ($securitySummary === null) {
+        return [
+            'state' => 'unavailable',
+            'label' => 'Unavailable',
+            'badge_class' => 'coverage-badge--unknown',
+            'dek' => 'Security coverage summary not loaded.',
+            'technical' => $technical,
+            'total' => 0,
+            'covers' => 0,
+            'not_started' => 0,
+            'summary_missing' => true,
+            'bucket_missing' => false,
+        ];
+    }
+
+    if (!isset($securitySummary['by_role'][$roleKey]) || !is_array($securitySummary['by_role'][$roleKey])) {
+        return [
+            'state' => 'unavailable',
+            'label' => 'Unavailable',
+            'badge_class' => 'coverage-badge--unknown',
+            'dek' => 'Role bucket missing from security summary — coverage data may be partial.',
+            'technical' => $technical,
+            'total' => 0,
+            'covers' => 0,
+            'not_started' => 0,
+            'summary_missing' => false,
+            'bucket_missing' => true,
+        ];
+    }
+
+    /** @var array<string, mixed> $b */
+    $b = $securitySummary['by_role'][$roleKey];
+    $total = (int) ($b['total'] ?? 0);
+    $notStarted = (int) ($b['not_started'] ?? 0);
+    $covers = (int) ($b['covers_suggested_window'] ?? 0);
+
+    if ($total === 0) {
+        return [
+            'state' => 'unavailable',
+            'label' => 'Unavailable',
+            'badge_class' => 'coverage-badge--unknown',
+            'dek' => 'No securities in this role in the market data plan.',
+            'technical' => $technical,
+            'total' => 0,
+            'covers' => 0,
+            'not_started' => 0,
+            'summary_missing' => false,
+            'bucket_missing' => false,
+        ];
+    }
+
+    if ($notStarted === $total) {
+        return [
+            'state' => 'not_started',
+            'label' => 'Not started',
+            'badge_class' => 'coverage-badge--not-started',
+            'dek' => sprintf('%d security price series in scope; none have rows in security_daily_prices yet.', $total),
+            'technical' => $technical,
+            'total' => $total,
+            'covers' => $covers,
+            'not_started' => $notStarted,
+            'summary_missing' => false,
+            'bucket_missing' => false,
+        ];
+    }
+
+    if ($covers === $total) {
+        return [
+            'state' => 'ready',
+            'label' => 'Coverage ready',
+            'badge_class' => 'coverage-badge--ok',
+            'dek' => sprintf('All %d series fully cover the suggested import window.', $total),
+            'technical' => $technical,
+            'total' => $total,
+            'covers' => $covers,
+            'not_started' => $notStarted,
+            'summary_missing' => false,
+            'bucket_missing' => false,
+        ];
+    }
+
+    return [
+        'state' => 'partial',
+        'label' => 'Partial coverage',
+        'badge_class' => 'coverage-badge--partial',
+        'dek' => sprintf('%d of %d fully cover the suggested window; resolve gaps before event-study QA.', $covers, $total),
+        'technical' => $technical,
+        'total' => $total,
+        'covers' => $covers,
+        'not_started' => $notStarted,
+        'summary_missing' => false,
+        'bucket_missing' => false,
+    ];
+}
+
+/**
+ * @param array<string, mixed> $roleReadiness
+ */
+function komodo_price_import_role_pipeline_satisfied(array $roleReadiness): bool
+{
+    if (!empty($roleReadiness['summary_missing']) || !empty($roleReadiness['bucket_missing'])) {
+        return false;
+    }
+
+    if ($roleReadiness['state'] === 'ready') {
+        return true;
+    }
+
+    return $roleReadiness['state'] === 'unavailable' && (int) ($roleReadiness['total'] ?? 0) === 0;
+}
+
+/**
+ * @param array<string, mixed> $benchmark
+ * @param array<string, mixed> $eventLinked
+ * @param array<string, mixed> $comparison
+ */
+function komodo_price_import_next_action(array $benchmark, array $eventLinked, array $comparison): string
+{
+    if (!empty($benchmark['summary_missing'])) {
+        return 'Reconnect the database or reload this page — benchmark index coverage could not be summarized.';
+    }
+
+    if (!empty($eventLinked['summary_missing']) || !empty($comparison['summary_missing'])) {
+        return 'Reconnect the database or reload this page — security price coverage could not be summarized.';
+    }
+
+    if (!empty($eventLinked['bucket_missing']) || !empty($comparison['bucket_missing'])) {
+        return 'Security role breakdown is incomplete — fix the market data summary load, then revisit this readiness panel.';
+    }
+
+    if ($benchmark['state'] === 'unavailable' && (int) ($benchmark['total_indexes'] ?? 0) === 0) {
+        return 'Define benchmark indexes in the database, then load benchmark index prices (e.g. into index_daily_prices) outside Komodo for each benchmark you need for abnormal returns.';
+    }
+
+    if ($benchmark['state'] === 'not_started' || $benchmark['state'] === 'partial') {
+        return 'Next action: load benchmark index prices first (e.g. into index_daily_prices) using your external pipeline — Komodo does not write rows. Finish all benchmark series before scaling security price loads.';
+    }
+
+    if (!komodo_price_import_role_pipeline_satisfied($eventLinked)) {
+        return 'Next action: load security prices for event-linked securities (e.g. into security_daily_prices) outside Komodo — these anchor primary event-study observations.';
+    }
+
+    if (!komodo_price_import_role_pipeline_satisfied($comparison)) {
+        return 'Next action: load security prices for comparison / unlinked securities outside Komodo, then re-run this page for coverage QA.';
+    }
+
+    return 'Price coverage looks sufficient for event-study QA in this portal — verify windows, special import notes, and data sources; run estimation outside Komodo.';
 }
 
 /**
@@ -190,7 +487,7 @@ function komodo_market_data_insights(?array $securitySummary, ?array $indexSumma
     $parts = [];
     if (is_array($securitySummary)) {
         $parts[] = $withPrices === 0
-            ? sprintf('No securities have price rows yet (%d in import plan).', $totalSec)
+            ? sprintf('No securities have price rows yet (%d in market data plan).', $totalSec)
             : sprintf('%d of %d securities have at least one price row.', $withPrices, $totalSec);
     }
     if (is_array($indexSummary)) {
@@ -206,22 +503,22 @@ function komodo_market_data_insights(?array $securitySummary, ?array $indexSumma
     }
     $headline = $parts !== [] ? implode(' ', $parts) : 'Market data coverage snapshot.';
 
-    $next = 'Import benchmark index daily prices first, then event-linked securities.';
+    $next = 'Pending external load: benchmark index daily prices first, then event-linked securities (Komodo is read-only).';
     if ($indexStage === 'all_indexes_have_bars' && $withPrices < $totalSec && $totalSec > 0) {
-        $next = 'Indexes look loaded — focus on event-linked security prices, then comparison tickers.';
+        $next = 'Benchmark indexes look loaded — focus on event-linked security price coverage, then comparison tickers (outside Komodo).';
     }
     if ($indexStage === 'index_prices_partial') {
-        $next = 'Finish remaining benchmark index series before relying on cross-asset QA.';
+        $next = 'Finish remaining benchmark index series outside Komodo before relying on cross-asset QA.';
     }
     if ($covers === $totalSec && $totalSec > 0 && $indexStage === 'all_indexes_have_bars') {
-        $next = 'All planned windows show coverage — spot-check gaps and data sources before studies.';
+        $next = 'Planned windows show coverage in telemetry — spot-check gaps and source provenance before running estimation outside Komodo.';
     }
 
     $checklist = [
-        'Load index_daily_prices for every market_indexes row you need as a benchmark.',
-        'Load security_daily_prices starting with event_linked_security rows.',
-        'Compare first/last bar dates against suggested_import_* on this page.',
-        'Revisit Data gaps for price provenance after imports.',
+        'Outside Komodo: load index_daily_prices for every market_indexes row you need as a benchmark.',
+        'Outside Komodo: load security_daily_prices starting with event_linked_security rows.',
+        'Compare first/last bar dates against suggested_import_* dates on this page.',
+        'Revisit Data gaps for price provenance after each external load batch.',
     ];
 
     return [

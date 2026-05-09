@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 $pageDesc = 'Komodo v'
     . KOMODO_APP_VERSION
-    . ' — local read-only cyber–finance event-study control room for MariaDB readiness, imports, QA views, and pipeline gaps (work in progress).';
+    . ' — read-only cybersecurity–finance research portal for MariaDB telemetry, event-study preparation, price import readiness, QA views, and pipeline gaps. Not for trading or investment advice. Local development / research use.';
 
 ?>
 <!DOCTYPE html>

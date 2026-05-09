@@ -11,8 +11,8 @@ $gapRows = $ctx['gap_rows'];
 <section class="panel shell-section" aria-labelledby="gaps-heading">
     <h2 id="gaps-heading">Data gaps</h2>
     <p class="section-lead"><?= $offlineMode
-        ? 'Expected gaps compared to offline reference scaffolding.'
-        : 'Derived from interpreted table counts (not a substitute for QA views).' ?></p>
+        ? 'Expected gaps compared to offline reference scaffolding (read-only portal).'
+        : 'Derived from interpreted table counts in this read-only portal — not a substitute for QA views.' ?></p>
     <div class="table-scroll">
         <table class="data-table">
             <thead>

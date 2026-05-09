@@ -1,4 +1,4 @@
-# Developer checks — Komodo v0.2
+# Developer checks — Komodo v0.0.2
 
 Small **plain PHP / batch** helpers under `tools/`. No Composer, PHPUnit, or DB writes.
 
@@ -8,7 +8,7 @@ Run commands from the project root (`D:\Windows\xampp\htdocs\komodo`) unless not
 
 ## `tools/komodo_smoke.php`
 
-**Purpose:** Structural smoke test — critical files exist, route map matches expectations (same seven `?page=` keys as `public/index.php`), unknown keys stay unmapped, `.gitignore` covers `local.php`, optional git check ensures `app/config/local.php` is **not tracked**.
+**Purpose:** Structural smoke test — critical files exist, route keys match `komodo_page_routes()` in `app/config/pages.php` (same source as `public/index.php`), unknown keys stay unmapped, `.gitignore` covers `local.php`, optional git check ensures `app/config/local.php` is **not tracked**.
 
 ```bat
 D:\Windows\xampp\php\php.exe tools\komodo_smoke.php
@@ -17,9 +17,9 @@ D:\Windows\xampp\php\php.exe tools\komodo_smoke.php
 - **Offline:** Fully valid — **exit 0** when all PASS.
 - **Fails:** Missing file / bad route bookkeeping / tracked secrets — **exit 1**.
 
-**Note:** Keep the `$pageMap` list in `komodo_smoke.php` aligned with `public/index.php` when routes change.
+**Note:** Add new routes in `app/config/pages.php` only — smoke, `public/index.php`, and `komodo_sidebar_nav_keys()` (sidebar) consume that registry. Page-specific `$ctx` keys (market data, companies, etc.) are wired in `app/lib/page_context.php`.
 
-The core file checklist includes `app/lib/market_data_queries.php` (Market Data import coverage helpers).
+The core file checklist includes `app/lib/market_data_queries.php` (Market Data import coverage helpers) and `app/lib/event_queries.php` (Events list page context).
 
 ---
 
@@ -74,16 +74,31 @@ tools\lint_all.bat
 
 ---
 
+## `tools/check_all.bat`
+
+**Purpose:** Run **`lint_all.bat`**, then **`komodo_smoke.php`**, **`komodo_db_check.php`**, and **`komodo_security_scan.php`** in order. Uses `D:\Windows\xampp\php\php.exe` (edit the batch file if your XAMPP path differs).
+
+```bat
+tools\check_all.bat
+```
+
+- **Exit:** Non-zero if any step fails (per underlying tool). Note: `komodo_db_check.php` uses **exit 2** when connected but some whitelist counts are unavailable — that also fails this batch.
+
+Milestone context: [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) · Before price loads: [`pre_import_checklist.md`](pre_import_checklist.md)
+
+---
+
 ## When to run
 
 | Timing | Scripts |
 |--------|---------|
 | After refactors / route or layout changes | `komodo_smoke.php`, `lint_all.bat`, `komodo_security_scan.php` |
 | Before commits | All of the above; fix security scan warnings or explicitly document exceptions |
-| Before heavy DB import work | `komodo_db_check.php` (confirm live/degraded/offline posture) |
+| Before heavy DB import work | `komodo_db_check.php` (confirm live/degraded/offline posture); see [`pre_import_checklist.md`](pre_import_checklist.md) |
+| Milestone / release sanity | `check_all.bat` (or run each tool individually) |
 | After adding / editing `local.php` | `komodo_db_check.php`; `komodo_smoke.php` confirms git hygiene |
 | After adding files under `app/` or `public/` | Update **`lint_all.bat`** file list if new includes matter |
 
 ---
 
-See also [`smoke_test_checklist.md`](smoke_test_checklist.md) for browser-level checks.
+See also [`smoke_test_checklist.md`](smoke_test_checklist.md) for browser-level checks and [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) for the closed portal milestone scope.

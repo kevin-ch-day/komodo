@@ -25,14 +25,15 @@ $eventCoreTables = $ctx['event_core_tables'];
     <div class="overview-hero-layout">
         <div class="overview-hero-intro">
             <h1 class="overview-title-h1">Komodo</h1>
-            <p class="overview-subtitle">Cybersecurity Event Study Research Platform</p>
-            <p class="overview-mission">Komodo v<?= komodo_e(KOMODO_APP_VERSION) ?> remains an experimental read-only control surface for local MariaDB <code class="inline-code">COUNT(*)</code> telemetry. Treat every signal as provisional while tables, views, and downstream studies evolve.</p>
+            <p class="overview-subtitle">Cybersecurity–finance research portal</p>
+            <p class="overview-mission">Komodo v<?= komodo_e(KOMODO_APP_VERSION) ?> is a read-only local portal for MariaDB <code class="inline-code">COUNT(*)</code> telemetry and event-study preparation — not trading or investment advice. Treat every signal as provisional while tables, views, and downstream research evolve.</p>
         </div>
         <div class="overview-hero-meta" aria-label="Connection banners">
             <div class="overview-meta-row">
-                <span class="<?= komodo_e($primaryStatusBadge['class']) ?>" title="Dashboard mode"><?= komodo_e($primaryStatusBadge['text']) ?></span>
+                <span class="<?= komodo_e($primaryStatusBadge['class']) ?>" title="Portal mode"><?= komodo_e($primaryStatusBadge['text']) ?></span>
                 <span class="overview-meta-caption"><?= komodo_e($sidebarCaption) ?></span>
             </div>
+            <p class="compact-note overview-disclaimer">Research analytics only — not trading, execution, or investment advice.</p>
             <div class="banner-stack overview-banner-stack">
                 <?php foreach ($banners as $banner) { ?>
                     <p class="<?= komodo_e(komodo_banner_class($banner['type'])) ?>" role="status"><?= komodo_e($banner['text']) ?></p>
@@ -71,7 +72,7 @@ $eventCoreTables = $ctx['event_core_tables'];
                 $liveMerged,
                 'cyber_events',
                 KOMODO_OFFLINE_TABLE_REFERENCE['cyber_events'] ?? null
-            ); ?> <span class="stat-card__unit">cyber_events</span></p>
+            ); ?> <span class="stat-card__unit"><code class="inline-code inline-code--subtle"><?= komodo_e('cyber_events') ?></code></span></p>
             <table class="overview-mini-table" aria-label="Linked cyber event tables">
                 <tbody>
                     <?php foreach ($eventCoreTables as $et) {
@@ -79,9 +80,13 @@ $eventCoreTables = $ctx['event_core_tables'];
                             continue;
                         }
                         $ref = KOMODO_OFFLINE_TABLE_REFERENCE[$et] ?? null;
+                        $etLabel = komodo_label($et, 'db_object');
                         ?>
                         <tr>
-                            <th scope="row"><code class="inline-code"><?= komodo_e($et) ?></code></th>
+                            <th scope="row">
+                                <span class="label-primary"><?= komodo_e($etLabel) ?></span>
+                                <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e($et) ?></code></span>
+                            </th>
                             <td class="num"><?php echo komodo_metric_html($offlineMode, $liveMerged, $et, $ref); ?></td>
                         </tr>
                     <?php } ?>
@@ -98,7 +103,10 @@ $eventCoreTables = $ctx['event_core_tables'];
             <table class="overview-mini-table">
                 <tbody>
                     <tr>
-                        <th scope="row"><code class="inline-code">market_calendar</code></th>
+                        <th scope="row">
+                            <span class="label-primary"><?= komodo_e(komodo_label('market_calendar', 'db_object')) ?></span>
+                            <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e('market_calendar') ?></code></span>
+                        </th>
                         <td class="num"><?php echo komodo_metric_html(
                             $offlineMode,
                             $liveMerged,
@@ -107,7 +115,10 @@ $eventCoreTables = $ctx['event_core_tables'];
                         ); ?></td>
                     </tr>
                     <tr>
-                        <th scope="row"><code class="inline-code">vw_us_trading_days</code></th>
+                        <th scope="row">
+                            <span class="label-primary"><?= komodo_e(komodo_label('vw_us_trading_days', 'db_object')) ?></span>
+                            <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e('vw_us_trading_days') ?></code></span>
+                        </th>
                         <td class="num"><?php echo komodo_metric_html(
                             $offlineMode,
                             $liveMerged,
@@ -128,7 +139,10 @@ $eventCoreTables = $ctx['event_core_tables'];
             <table class="overview-mini-table">
                 <tbody>
                     <tr>
-                        <th scope="row"><code class="inline-code">security_daily_prices</code></th>
+                        <th scope="row">
+                            <span class="label-primary"><?= komodo_e(komodo_label('security_daily_prices', 'db_object')) ?></span>
+                            <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e('security_daily_prices') ?></code></span>
+                        </th>
                         <td class="num"><?php echo komodo_metric_html(
                             $offlineMode,
                             $liveMerged,
@@ -137,7 +151,10 @@ $eventCoreTables = $ctx['event_core_tables'];
                         ); ?></td>
                     </tr>
                     <tr>
-                        <th scope="row"><code class="inline-code">index_daily_prices</code></th>
+                        <th scope="row">
+                            <span class="label-primary"><?= komodo_e(komodo_label('index_daily_prices', 'db_object')) ?></span>
+                            <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e('index_daily_prices') ?></code></span>
+                        </th>
                         <td class="num"><?php echo komodo_metric_html(
                             $offlineMode,
                             $liveMerged,
@@ -154,7 +171,7 @@ $eventCoreTables = $ctx['event_core_tables'];
                 <h3 class="stat-card__title">Source provenance</h3>
                 <span class="<?= komodo_e($overviewProvenanceBadge['class']) ?>"><?= komodo_e($overviewProvenanceBadge['text']) ?></span>
             </div>
-            <p class="stat-card__dek">cyber_event_sources captures audit trails for narrative evidence.</p>
+            <p class="stat-card__dek">Source provenance table for narrative evidence and research traceability.</p>
             <p class="stat-card__value"><?php echo komodo_metric_html(
                 $offlineMode,
                 $liveMerged,
@@ -189,7 +206,7 @@ $eventCoreTables = $ctx['event_core_tables'];
 
     <section class="panel-nested panel-muted panel-nested--spaced">
         <h2 class="subsection-heading subsection-heading--flush">Next actions</h2>
-        <p class="section-lead">Operational checklist inferred from telemetry.</p>
+        <p class="section-lead">Checklist inferred from read-only telemetry — perform data work outside Komodo.</p>
         <ul class="action-list">
             <?php foreach ($nextActions as $line) { ?>
                 <li><?= komodo_e($line) ?></li>

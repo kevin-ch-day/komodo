@@ -29,27 +29,8 @@ $md = $ctx['market_data'] ?? [
         'checklist' => [],
     ],
     'notes_preview' => [],
+    'price_import_readiness' => null,
 ];
-
-$badgeClass = static function (string $status, bool $index = false): string {
-    $mapSec = [
-        'not_started' => 'coverage-badge--not-started',
-        'covers_suggested_window' => 'coverage-badge--ok',
-        'has_prices' => 'coverage-badge--ok',
-        'missing_start_window' => 'coverage-badge--warning',
-        'missing_end_window' => 'coverage-badge--warning',
-        'has_prices_window_unknown' => 'coverage-badge--unknown',
-        'partial_unknown_dates' => 'coverage-badge--unknown',
-        'partial' => 'coverage-badge--partial',
-    ];
-    $mapIdx = [
-        'not_started' => 'coverage-badge--not-started',
-        'has_prices' => 'coverage-badge--ok',
-    ];
-    $m = $index ? $mapIdx : $mapSec;
-
-    return $m[$status] ?? 'coverage-badge--unknown';
-};
 
 $formatDateCell = static function (?string $v): string {
     if ($v === null || $v === '') {
@@ -58,25 +39,13 @@ $formatDateCell = static function (?string $v): string {
     return komodo_e((string) $v);
 };
 
-$truncateNote = static function (?string $n, int $max = 100): array {
-    if ($n === null || $n === '') {
-        return ['', '', false];
-    }
-    $plain = preg_replace('/\s+/', ' ', trim(strip_tags($n)));
-    if ($plain === null) {
-        $plain = '';
-    }
-    $shortened = strlen($plain) > $max;
-    $show = $shortened ? substr($plain, 0, $max) . '…' : $plain;
-
-    return [komodo_e($show), komodo_e($plain), $shortened];
-};
-
 $ss = $md['security_summary'];
 $is = $md['index_summary'];
 $byRole = is_array($ss) && isset($ss['by_role']) && is_array($ss['by_role']) ? $ss['by_role'] : [];
 /** @var array<string, mixed> $ins */
 $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
+/** @var array<string, mixed>|null $pir */
+$pir = is_array($md['price_import_readiness'] ?? null) ? $md['price_import_readiness'] : null;
 
 ?>
 <section class="panel shell-section market-data-page" aria-labelledby="market-heading">
@@ -93,9 +62,9 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
 
     <?php /* A. Overview */ ?>
     <section class="panel-nested panel-phase--inset market-data-overview" aria-labelledby="market-md-overview-label">
-        <h3 id="market-md-overview-label" class="subsection-heading subsection-heading-tight">Import coverage overview</h3>
+        <h3 id="market-md-overview-label" class="subsection-heading subsection-heading-tight">Market data and security price coverage</h3>
         <?php if (!$md['available']) { ?>
-            <p class="section-lead">Market data readiness needs a configured <code class="inline-code">app/config/local.php</code> and a running MariaDB instance. Offline mode cannot evaluate per-security windows or benchmarks.</p>
+            <p class="section-lead">This read-only portal needs a configured <code class="inline-code">app/config/local.php</code> and a running MariaDB instance. Offline mode cannot evaluate per-security windows or benchmark indexes.</p>
             <span class="badge badge--placeholder">Coverage offline</span>
         <?php } else { ?>
             <div class="market-md-mode-row">
@@ -127,10 +96,10 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
                     } else {
                         ?>—<?php } ?></li>
                     <li><?php if ($pcw !== null) {
-                        ?><strong><?= komodo_e((string) $pcw) ?>%</strong> fully cover suggested window<?php
+                        ?><strong><?= komodo_e((string) $pcw) ?>%</strong> fully cover suggested import window<?php
                     } else {
                         ?>—<?php } ?></li>
-                    <li><span class="compact-note"><?= komodo_e('Tickers with import_notes: ')
+                    <li><span class="compact-note"><?= komodo_e('Tickers with special import notes: ')
                         ?><strong><?= komodo_e((string) ($ss['securities_with_import_notes'] ?? 0)) ?></strong></span></li>
                 </ul>
             <?php } ?>
@@ -183,13 +152,90 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
             </ul>
         </details>
 
-        <h4 class="subsection-heading subsection-heading-tight">Recommended import order</h4>
+        <h4 class="subsection-heading subsection-heading-tight">Suggested external load order</h4>
         <ol class="market-md-next-steps">
-            <li>Import <strong>benchmark index</strong> daily prices into <code class="inline-code">index_daily_prices</code>.</li>
-            <li>Import <strong>event-linked</strong> security prices into <code class="inline-code">security_daily_prices</code>.</li>
-            <li>Import <strong>comparison / unlinked</strong> security prices.</li>
-            <li>Re-run this page for coverage QA before event-study steps.</li>
+            <li>Load <strong>benchmark index</strong> daily prices (e.g. into <code class="inline-code">index_daily_prices</code>) using your pipeline outside Komodo.</li>
+            <li>Load <strong>event-linked security</strong> prices (e.g. into <code class="inline-code">security_daily_prices</code>) outside Komodo.</li>
+            <li>Load <strong>comparison / unlinked security</strong> prices outside Komodo.</li>
+            <li>Re-run this read-only page for coverage QA before event-study preparation steps elsewhere.</li>
         </ol>
+
+        <section class="panel-nested panel-phase--inset price-import-readiness" aria-labelledby="price-readiness-heading">
+            <h3 id="price-readiness-heading" class="subsection-heading subsection-heading-tight">Price import readiness</h3>
+            <p class="section-lead price-import-readiness__lead"><strong>Price import readiness</strong> summarizes whether benchmark indexes and security price coverage support <strong>event-study preparation</strong>. Read-only guidance only — run all loads outside Komodo.</p>
+            <?php if ($pir === null) { ?>
+                <p class="compact-note" role="status">Price import readiness is unavailable until market data summaries load (database connection required).</p>
+            <?php } else {
+                /** @var array<string, mixed> $ov */
+                $ov = $pir['overall'];
+                /** @var array<string, mixed> $bm */
+                $bm = $pir['benchmark'];
+                /** @var array<string, mixed> $el */
+                $el = $pir['event_linked'];
+                /** @var array<string, mixed> $cp */
+                $cp = $pir['comparison'];
+                $notesCount = (int) ($pir['notes_count'] ?? 0);
+                $nextAction = (string) ($pir['next_action'] ?? '');
+                $techLine = static function (array $r): string {
+                    $t = $r['technical'] ?? [];
+                    if (!is_array($t) || $t === []) {
+                        return '';
+                    }
+                    $codes = array_map(static fn ($c) => '<code class="inline-code inline-code--subtle">' . komodo_e((string) $c) . '</code>', $t);
+
+                    return implode(' · ', $codes);
+                };
+                ?>
+            <div class="price-readiness-overall">
+                <span class="compact-note">Overall price import readiness (telemetry)</span>
+                <span class="coverage-badge <?= komodo_e((string) ($ov['badge_class'] ?? 'coverage-badge--unknown')) ?>"><?= komodo_e((string) ($ov['label'] ?? '—')) ?></span>
+            </div>
+
+            <div class="market-summary-grid price-readiness-cards" aria-label="Price import readiness by area">
+                <article class="stat-card market-summary-card price-readiness-card">
+                    <h4 class="stat-card__title">Benchmark indexes</h4>
+                    <p class="stat-card__value"><span class="coverage-badge <?= komodo_e((string) ($bm['badge_class'] ?? '')) ?>"><?= komodo_e((string) ($bm['label'] ?? '—')) ?></span></p>
+                    <p class="compact-note stat-card__dek"><?= komodo_e((string) ($bm['dek'] ?? '')) ?></p>
+                    <p class="compact-note price-readiness-card__tech"><?= $techLine($bm) ?></p>
+                </article>
+                <article class="stat-card market-summary-card price-readiness-card">
+                    <h4 class="stat-card__title">Event-linked securities</h4>
+                    <p class="stat-card__value"><span class="coverage-badge <?= komodo_e((string) ($el['badge_class'] ?? '')) ?>"><?= komodo_e((string) ($el['label'] ?? '—')) ?></span></p>
+                    <p class="compact-note stat-card__dek"><?= komodo_e((string) ($el['dek'] ?? '')) ?></p>
+                    <p class="compact-note price-readiness-card__tech"><?= $techLine($el) ?></p>
+                </article>
+                <article class="stat-card market-summary-card price-readiness-card">
+                    <h4 class="stat-card__title">Comparison / unlinked securities</h4>
+                    <p class="stat-card__value"><span class="coverage-badge <?= komodo_e((string) ($cp['badge_class'] ?? '')) ?>"><?= komodo_e((string) ($cp['label'] ?? '—')) ?></span></p>
+                    <p class="compact-note stat-card__dek"><?= komodo_e((string) ($cp['dek'] ?? '')) ?></p>
+                    <p class="compact-note price-readiness-card__tech"><?= $techLine($cp) ?></p>
+                </article>
+                <article class="stat-card market-summary-card price-readiness-card">
+                    <h4 class="stat-card__title">Special import notes</h4>
+                    <p class="stat-card__value"><?= komodo_e((string) $notesCount) ?></p>
+                    <p class="compact-note stat-card__dek"><?= $notesCount === 0
+                        ? 'No tickers flagged with import notes in the current market data plan.'
+                        : 'Tickers with non-empty import notes — review required before widening external price loads (see notes preview below).'; ?></p>
+                    <p class="compact-note price-readiness-card__tech"><code class="inline-code inline-code--subtle">vw_market_data_import_plan</code></p>
+                </article>
+            </div>
+
+            <div class="price-readiness-next" role="region" aria-label="Recommended next action">
+                <p class="price-readiness-next__label">Recommended next action</p>
+                <p class="price-readiness-next__body"><?= komodo_e($nextAction) ?></p>
+            </div>
+
+            <details class="market-md-collapsible price-readiness-method">
+                <summary>Finance interpretation / method note</summary>
+                <ul class="compact-note price-readiness-method__list">
+                    <li><strong>Benchmark indexes</strong> supply the market model series (e.g. for abnormal returns) — load <code class="inline-code">index_daily_prices</code> before scaling security work.</li>
+                    <li><strong>Event-linked securities</strong> are the primary names tied to events; their <strong>security price coverage</strong> must span the <strong>suggested import window</strong> for core event-study observations.</li>
+                    <li><strong>Comparison securities</strong> (and unlinked plan rows) support robustness, peer context, or placebo-style checks — still require window coverage when used.</li>
+                    <li><strong>Event-study preparation</strong> assumes benchmarks and material securities meet full <strong>security price coverage</strong> for the <strong>suggested import window</strong> before running estimation outside Komodo — re-run this page after each external load batch.</li>
+                </ul>
+            </details>
+            <?php } ?>
+        </section>
     </section>
 
     <?php if (!$md['available']) { ?>
@@ -245,8 +291,8 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
         $previewNotes = is_array($md['notes_preview'] ?? null) ? $md['notes_preview'] : [];
         if ($previewNotes !== []) { ?>
             <aside class="panel-nested panel-muted market-notes-spotlight" aria-labelledby="notes-spot-heading">
-                <h3 id="notes-spot-heading" class="subsection-heading subsection-heading-tight">Import notes spotlight</h3>
-                <p class="compact-note">Tickers flagged in <code class="inline-code">vw_market_data_import_plan.import_notes</code> — resolve before widening coverage.</p>
+                <h3 id="notes-spot-heading" class="subsection-heading subsection-heading-tight">Special import notes spotlight</h3>
+                <p class="compact-note">Tickers flagged in <code class="inline-code">vw_market_data_import_plan.import_notes</code> — review required before widening external price coverage.</p>
                 <ul class="market-notes-spotlight-list">
                     <?php foreach ($previewNotes as $pv) { ?>
                         <li>
@@ -287,7 +333,7 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
                                 <td class="num"><?= komodo_e((string) ($ix['price_rows'] ?? '0')) ?></td>
                                 <td><?= $formatDateCell(komodo_normalize_date_string($ix['first_price_date'] ?? null)) ?></td>
                                 <td><?= $formatDateCell(komodo_normalize_date_string($ix['last_price_date'] ?? null)) ?></td>
-                                <td><span class="coverage-badge <?= komodo_e($badgeClass($ist, true)) ?>"<?= $istDesc ? ' title="' . komodo_e($istDesc) . '"' : '' ?>><?= komodo_e($istLabel) ?></span></td>
+                                <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($ist, 'index')) ?>"<?= $istDesc ? ' title="' . komodo_e($istDesc) . '"' : '' ?>><?= komodo_e($istLabel) ?></span></td>
                             </tr>
                         <?php } ?>
                     </tbody>
@@ -347,7 +393,7 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
             <p class="compact-note env-note env-note--warn">Security rows could not be loaded.</p>
         <?php } elseif (($md['top_problem_securities'] ?? []) === [] && ($md['security_rows'] ?? []) !== []) { ?>
             <p class="env-note env-note--success" role="status">Nothing in the “problem ticker” slice right now — every security is outside the flagged coverage states (typically all-green vs suggested windows).</p>
-            <p class="compact-note"><?= komodo_e('Imports that stop short of suggested dates or leave notes unresolved will bubble up here automatically (event-linked first).') ?></p>
+            <p class="compact-note"><?= komodo_e('External loads that stop short of suggested dates or leave notes unresolved will surface here automatically (event-linked first).') ?></p>
         <?php } elseif (($md['top_problem_securities'] ?? []) === []) { ?>
             <p class="compact-note">—</p>
         <?php } else { ?>
@@ -370,7 +416,7 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
                             $stProb = (string) ($prob['coverage_status'] ?? '');
                             $stProbLabel = komodo_label($stProb, 'coverage_status');
                             $stProbDesc = komodo_describe($stProb, 'coverage_status');
-                            [$noteDisp, $noteFull, $hasTitle] = $truncateNote(isset($prob['import_notes']) ? (string) $prob['import_notes'] : '');
+                            [$noteDisp, $noteFull, $hasTitle] = komodo_note_preview(isset($prob['import_notes']) ? (string) $prob['import_notes'] : '', 100);
                             $roleKey = (string) ($prob['price_import_role'] ?? '');
                             $roleLabel = komodo_label($roleKey, 'role');
                             $roleDesc = $roleKey !== '' ? komodo_describe($roleKey, 'role') : null;
@@ -394,7 +440,7 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
                                 ? komodo_e($sd . ' → ' . $ed)
                                 : '—'; ?></td>
                                 <td class="num"><?= komodo_e((string) ($prob['price_rows'] ?? 0)) ?></td>
-                                <td><span class="coverage-badge <?= komodo_e($badgeClass($stProb)) ?>"<?= $stProbDesc ? ' title="' . komodo_e($stProbDesc) . '"' : '' ?>><?= komodo_e($stProbLabel) ?></span></td>
+                                <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($stProb)) ?>"<?= $stProbDesc ? ' title="' . komodo_e($stProbDesc) . '"' : '' ?>><?= komodo_e($stProbLabel) ?></span></td>
                                 <td class="compact-note"><?php if ($noteDisp !== '') { ?>
                                     <span<?= $hasTitle ? ' title="' . $noteFull . '"' : '' ?>><?= $noteDisp ?></span>
                                 <?php } else {
@@ -412,9 +458,9 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
             $totalPlan = count($md['security_rows']);
             ?>
             <details class="market-md-collapsible market-md-collapsible--plan">
-                <summary>Full import plan (<?= komodo_e((string) $totalPlan) ?> securities)</summary>
+                <summary>Full market data plan (<?= komodo_e((string) $totalPlan) ?> securities)</summary>
                 <div class="table-scroll">
-                    <table class="data-table data-table--sticky data-table--dense" aria-label="Full vw_market_data_import_plan coverage">
+                    <table class="data-table data-table--sticky data-table--dense" aria-label="Full market data plan coverage (vw_market_data_import_plan)">
                         <thead>
                             <tr>
                                 <th scope="col">Ticker</th>
@@ -434,7 +480,7 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
                                 $fst = (string) ($fw['coverage_status'] ?? '');
                                 $fstLabel = komodo_label($fst, 'coverage_status');
                                 $fstDesc = komodo_describe($fst, 'coverage_status');
-                                [$nDisp, $nFull, $hasTtl] = $truncateNote(isset($fw['import_notes']) ? (string) $fw['import_notes'] : '', 72);
+                                [$nDisp, $nFull, $hasTtl] = komodo_note_preview(isset($fw['import_notes']) ? (string) $fw['import_notes'] : '', 72);
                                 $sd = komodo_normalize_date_string($fw['suggested_import_start_date'] ?? null) ?? '';
                                 $ed = komodo_normalize_date_string($fw['suggested_import_end_date'] ?? null) ?? '';
                                 $wf = komodo_normalize_date_string($fw['first_price_date'] ?? null);
@@ -462,7 +508,7 @@ $ins = is_array($md['insights'] ?? null) ? $md['insights'] : [];
                                     <td><?= $sd !== '' && $ed !== '' ? komodo_e($sd . ' → ' . $ed) : '—'; ?></td>
                                     <td class="num"><?= komodo_e((string) ($fw['price_rows'] ?? 0)) ?></td>
                                     <td class="compact-note"><?php echo $barSpan; ?></td>
-                                    <td><span class="coverage-badge <?= komodo_e($badgeClass($fst)) ?>"<?= $fstDesc ? ' title="' . komodo_e($fstDesc) . '"' : '' ?>><?= komodo_e($fstLabel) ?></span></td>
+                                    <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($fst)) ?>"<?= $fstDesc ? ' title="' . komodo_e($fstDesc) . '"' : '' ?>><?= komodo_e($fstLabel) ?></span></td>
                                     <td class="compact-note"><?php if ($nDisp !== '') { ?>
                                         <span<?= $hasTtl ? ' title="' . $nFull . '"' : '' ?>><?= $nDisp ?></span>
                                     <?php } else {

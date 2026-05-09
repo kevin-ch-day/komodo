@@ -11,7 +11,7 @@ $researchViews = $ctx['research_views'];
 ?>
 <section class="panel shell-section" aria-labelledby="rq-heading">
     <h2 id="rq-heading">Research quality</h2>
-    <p class="section-lead">QA and edge-case diagnostic views. Primary labels are analyst-facing; technical view names remain available for audit traceability.</p>
+    <p class="section-lead">Research quality and edge-case diagnostics (read-only). Primary labels are analyst-facing; technical view names stay in secondary metadata for source provenance and audit traceability.</p>
     <div class="table-scroll">
         <table class="data-table">
             <thead>

@@ -26,37 +26,16 @@ $securities = (array) ($cd['securities'] ?? []);
 $events = (array) ($cd['events'] ?? []);
 $trace = (array) ($cd['trace_sources'] ?? []);
 
-$badgeClass = static function (string $status): string {
-    return match ($status) {
-        'not_started' => 'coverage-badge--not-started',
-        'covers_suggested_window' => 'coverage-badge--ok',
-        'missing_start_window', 'missing_end_window' => 'coverage-badge--warning',
-        'partial' => 'coverage-badge--partial',
-        default => 'coverage-badge--unknown',
-    };
-};
-
-$truncateNote = static function (?string $n, int $max = 140): array {
-    if ($n === null || trim($n) === '') {
-        return ['', '', false];
-    }
-    $plain = preg_replace('/\s+/', ' ', trim(strip_tags($n)));
-    $plain = is_string($plain) ? $plain : (string) $n;
-    $shortened = strlen($plain) > $max;
-    $show = $shortened ? substr($plain, 0, $max) . '…' : $plain;
-
-    return [komodo_e($show), komodo_e($plain), $shortened];
-};
-
 ?>
 <section class="panel shell-section company-page" aria-labelledby="company-heading">
     <nav class="market-md-related" aria-label="Back links">
         <a class="footer-top-link" href="index.php?page=companies">← Back to Companies</a>
     </nav>
 
-    <div class="companies-hero company-hero" aria-label="Company header">
+    <div class="companies-hero company-hero" aria-label="Company detail header">
         <div class="companies-hero__left">
             <h2 id="company-heading" class="companies-hero__title"><?= $profile ? komodo_e((string) ($profile['display_name'] ?? 'Company')) : 'Company' ?></h2>
+            <p class="compact-note company-hero__portal-note">Read-only cybersecurity–finance drilldown — not trading or investment advice.</p>
             <?php if ($profile) { ?>
                 <p class="companies-hero__subtitle">
                     <?= komodo_e((string) ($profile['legal_name'] ?? '')) ?>
@@ -72,10 +51,10 @@ $truncateNote = static function (?string $n, int $max = 140): array {
                         $crLabel = komodo_label_safe($crKey, 'company_role');
                         $crDesc = komodo_describe($crKey, 'company_role');
                         ?>
-                        <span class="label-secondary">
-                            <span<?= $crDesc ? ' title="' . komodo_e($crDesc) . '"' : '' ?>><?= komodo_e($crLabel) ?></span>
-                            <code class="inline-code inline-code--subtle"><?= komodo_e($crKey) ?></code>
-                        </span>
+                        <div class="label-stack">
+                            <span class="label-primary"<?= $crDesc ? ' title="' . komodo_e($crDesc) . '"' : '' ?>><?= komodo_e($crLabel) ?></span>
+                            <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e($crKey) ?></code></span>
+                        </div>
                     <?php } ?>
                 </div>
             <?php } else { ?>
@@ -162,12 +141,12 @@ $truncateNote = static function (?string $n, int $max = 140): array {
                         $covKey = (string) ($s['coverage_status'] ?? 'unavailable_or_error');
                         $covLabel = komodo_label_safe($covKey, 'coverage_status');
                         $covDesc = komodo_describe($covKey, 'coverage_status');
-                        $covClass = $badgeClass($covKey);
+                        $covClass = komodo_coverage_badge_css($covKey);
                         $pr = (int) ($s['price_rows'] ?? 0);
                         $first = komodo_normalize_date_string($s['first_price_date'] ?? null);
                         $last = komodo_normalize_date_string($s['last_price_date'] ?? null);
                         $span = $pr > 0 && $first && $last ? ($first . ' → ' . $last) : 'No prices loaded';
-                        [$noteDisp, $noteFull, $noteT] = $truncateNote(isset($s['import_notes']) ? (string) $s['import_notes'] : '');
+                        [$noteDisp, $noteFull, $noteT] = komodo_note_preview(isset($s['import_notes']) ? (string) $s['import_notes'] : '', 140);
                         $sd = komodo_normalize_date_string($s['suggested_import_start_date'] ?? null) ?? '';
                         $ed = komodo_normalize_date_string($s['suggested_import_end_date'] ?? null) ?? '';
                         $window = ($sd !== '' && $ed !== '') ? ($sd . ' → ' . $ed) : '—';

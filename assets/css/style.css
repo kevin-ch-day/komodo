@@ -1,4 +1,4 @@
-/* Komodo — dark research control room (v0.2 UI) */
+/* Komodo — dark research control room (v0.0.2 UI) */
 
 :root {
     color-scheme: dark;
@@ -609,6 +609,12 @@ body.komodo-dash {
     color: var(--text-muted);
 }
 
+.overview-disclaimer {
+    margin: 0;
+    max-width: 24rem;
+    color: var(--text-dim);
+}
+
 .overview-banner-stack.banner-stack {
     max-width: none;
 }
@@ -1107,6 +1113,67 @@ body.komodo-dash {
     margin: 1.25rem 0 1.5rem;
 }
 
+.price-import-readiness {
+    margin-top: 1.35rem;
+}
+
+.price-import-readiness__lead {
+    max-width: 48rem;
+}
+
+.price-readiness-overall {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.85rem;
+    margin: 0.85rem 0 0.15rem;
+}
+
+.price-readiness-cards {
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.price-readiness-card .stat-card__value {
+    font-size: 1.05rem;
+}
+
+.price-readiness-card__tech {
+    margin-top: 0.4rem;
+    color: var(--text-dim);
+}
+
+.price-readiness-next {
+    margin: 1rem 0 0.35rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-muted);
+}
+
+.price-readiness-next__label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin: 0 0 0.4rem;
+}
+
+.price-readiness-next__body {
+    margin: 0;
+    font-size: 0.94rem;
+    line-height: 1.5;
+}
+
+.price-readiness-method {
+    margin-top: 0.85rem;
+}
+
+.price-readiness-method__list {
+    margin: 0.45rem 0 0;
+    padding-left: 1.15rem;
+    max-width: 48rem;
+}
+
 .market-md-snapshot-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
@@ -1355,6 +1422,16 @@ body.komodo-dash {
 .companies-page .companies-tech-sources {
     margin-top: 0.75rem;
     opacity: 0.96;
+}
+
+.events-page .events-hero__date-note {
+    margin-top: 0.35rem;
+    max-width: 48rem;
+}
+
+.events-page .events-flag-badge {
+    display: inline-flex;
+    margin: 0.15rem 0.15rem 0 0;
 }
 
 .companies-page .market-md-snapshot-card h3,
