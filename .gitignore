@@ -1,0 +1,12 @@
+# Local secrets and environment
+.env
+app/config/local.php
+
+# Logs and cache
+*.log
+cache/
+tmp/
+
+# Database exports and dumps (do not commit real exports)
+dumps/
+*.dump.sql
