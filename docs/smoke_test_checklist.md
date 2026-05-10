@@ -1,4 +1,4 @@
-# Komodo v0.0.2 — smoke test checklist
+# Komodo v0.0.3 — smoke test checklist
 
 Short manual passes before trusting live DB behavior. Tick items as you verify.
 
@@ -7,7 +7,7 @@ Short manual passes before trusting live DB behavior. Tick items as you verify.
 - [ ] `http://localhost/komodo/` (or your base URL) redirects to `.../komodo/public/`.
 - [ ] Dashboard loads when `page` is omitted (default landing).
 - [ ] Each whitelist route responds:  
-  `?page=dashboard` · `companies` · `company` (with `company_id`) · `dataset` · `events` · `market-data` · `research-quality` · `data-gaps` · `pipeline`.
+  `?page=dashboard` · `companies` · `company` (with `company_id`) · `dataset` · `events` · `market-data` · `research-quality` · `data-gaps`.
 
 ## Errors and UX
 
@@ -28,4 +28,4 @@ Short manual passes before trusting live DB behavior. Tick items as you verify.
 
 ---
 
-_Last updated as part of the v0.0.2 read-only research portal; adjust host paths if not using `/komodo/`._
+_Last updated as part of the v0.0.3 read-only research portal; adjust host paths if not using `/komodo/`._

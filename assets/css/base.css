@@ -1,4 +1,4 @@
-﻿/* base — reset, body, skip link, wrap */
+﻿/* base — reset, body, skip link */
 *,
 *::before,
 *::after {
@@ -53,9 +53,4 @@ body.komodo-dash {
 .skip-link:focus {
     left: 0.5rem;
     top: 0.5rem;
-}
-
-.wrap {
-    width: min(100% - 2rem, var(--max));
-    margin-inline: auto;
 }

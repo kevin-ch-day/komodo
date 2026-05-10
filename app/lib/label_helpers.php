@@ -89,18 +89,6 @@ function komodo_format_identifier(string $raw): string
     return implode(' ', $out);
 }
 
-/**
- * Stable ordering where roles should be shown consistently.
- */
-function komodo_role_sort_key(string $role): int
-{
-    return match ($role) {
-        'event_linked_security' => 1,
-        'comparison_or_unlinked_security' => 2,
-        default => 99,
-    };
-}
-
 function komodo_label_lookup(string $key, string $domain): ?string
 {
     return match ($domain) {
@@ -220,5 +208,19 @@ function komodo_desc_lookup(string $key, string $domain): ?string
         },
         default => null,
     };
+}
+
+/**
+ * Shorter coverage badge text for catalog / summary tables (not Price audit).
+ * “Span OK” = first/last loaded bars align with the plan window within slack (density is separate).
+ */
+function komodo_coverage_catalog_label(string $key): string
+{
+    $k = trim($key);
+    if ($k === 'covers_suggested_window') {
+        return 'Span OK';
+    }
+
+    return komodo_label($k, 'coverage_status');
 }
 

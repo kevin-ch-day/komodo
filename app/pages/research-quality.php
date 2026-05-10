@@ -13,7 +13,7 @@ $researchViews = $ctx['research_views'];
     <h2 id="rq-heading">Research quality</h2>
     <p class="section-lead">Research quality and edge-case diagnostics (read-only). Primary labels are analyst-facing; technical view names stay in secondary metadata for source provenance and audit traceability.</p>
     <div class="table-scroll">
-        <table class="data-table">
+        <table class="data-table data-table--labeled-mobile">
             <thead>
                 <tr>
                     <th scope="col">Diagnostic</th>
@@ -27,7 +27,7 @@ $researchViews = $ctx['research_views'];
                     $desc = komodo_describe($viewKey, 'db_object');
                     ?>
                     <tr>
-                        <td>
+                        <td data-label="Diagnostic">
                             <div class="label-stack">
                                 <span class="label-primary"><?= komodo_e($primary) ?></span>
                                 <?php if ($desc !== null) { ?>
@@ -36,7 +36,7 @@ $researchViews = $ctx['research_views'];
                                 <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e($viewKey) ?></code></span>
                             </div>
                         </td>
-                        <td class="num"><?php echo komodo_metric_html($offlineMode, $liveMerged, $viewKey, $ref); ?></td>
+                        <td class="num" data-label="Rows"><?php echo komodo_metric_html($offlineMode, $liveMerged, $viewKey, $ref); ?></td>
                     </tr>
                 <?php } ?>
             </tbody>

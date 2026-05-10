@@ -1,7 +1,7 @@
 ﻿/* shell-aux — sidebar legend, metric hint, shell footer strip */
 .sidebar-legend-collapsed {
     flex: 0 0 auto;
-    margin-top: 0.625rem;
+    margin-top: 0.45rem;
     padding-top: 0;
     border-top: 1px dashed var(--border-subtle);
 }
@@ -98,7 +98,7 @@
 
 .site-footer--shell {
     border-top: 1px solid var(--border);
-    padding: 1rem clamp(1rem, 4vw, 2rem);
+    padding: 1.15rem clamp(1.25rem, 3vw, 2.75rem) 1.35rem;
     font-size: 0.82rem;
     color: var(--text-dim);
     background: var(--surface-muted);
@@ -106,8 +106,8 @@
 
 .site-footer--shell p {
     margin: 0;
-    width: min(100% - 2rem, var(--max));
-    margin-inline: auto;
+    width: 100%;
+    max-width: none;
 }
 
 .footer-meta {

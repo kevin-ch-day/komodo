@@ -148,7 +148,8 @@
     border: 1px solid var(--border-subtle);
 }
 
-.market-data-page .market-md-related {
+/* e.g. company detail “Back to Companies”; not used for duplicate sidebar links */
+.market-md-related {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -285,6 +286,16 @@
     box-shadow: 0 1px 0 var(--border-subtle);
 }
 
+/* Avoid sticky thead fighting the sticky top nav band on narrow viewports */
+@media (max-width: 55.99rem) {
+    .data-table.data-table--sticky thead th {
+        position: static;
+        top: auto;
+        z-index: auto;
+        box-shadow: none;
+    }
+}
+
 .data-table.data-table--dense tbody td,
 .data-table.data-table--dense thead th {
     padding: 0.35rem 0.5rem;
@@ -303,4 +314,9 @@
 .data-table.data-table--sticky-left thead th:nth-child(1) {
     background: var(--bg-elevated);
     z-index: 3;
+}
+
+/* Price audit — full plan grid: many columns; keep a horizontal scroll floor */
+.data-table--audit-full-plan {
+    min-width: 52rem;
 }

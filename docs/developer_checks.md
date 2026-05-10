@@ -1,4 +1,4 @@
-# Developer checks — Komodo v0.0.2
+# Developer checks — Komodo v0.0.3
 
 Small **plain PHP / batch** helpers under `tools/`. No Composer, PHPUnit, or DB writes.
 
@@ -137,7 +137,7 @@ tools\check_all.bat
 
 - **Exit:** Non-zero if any step fails (per underlying tool). Note: `komodo_db_check.php` uses **exit 2** when connected but some whitelist counts are unavailable — that also fails this batch.
 
-Milestone context: [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) · Before price loads: [`pre_import_checklist.md`](pre_import_checklist.md)
+Milestone context: [`komodo_v0_0_3_milestone.md`](komodo_v0_0_3_milestone.md) · Baseline: [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) · Before price loads: [`pre_import_checklist.md`](pre_import_checklist.md)
 
 **Schema migrations (manual, not run by tools here):** e.g. [`sql/remove_data_sources.sql`](../sql/remove_data_sources.sql) — backup, review constraint names, then execute in MariaDB when approved. Import CLI scripts and the Market Data page no longer reference `data_sources`; dropping the table/columns keeps the DB aligned with the app.
 
@@ -156,4 +156,4 @@ Milestone context: [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) ·
 
 ---
 
-See also [`smoke_test_checklist.md`](smoke_test_checklist.md) for browser-level checks and [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) for the closed portal milestone scope.
+See also [`smoke_test_checklist.md`](smoke_test_checklist.md) for browser-level checks, [`komodo_v0_0_3_milestone.md`](komodo_v0_0_3_milestone.md) for the current milestone, and [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) for the original portal baseline.

@@ -66,7 +66,7 @@ $pir = $komodo_pir ?? null;
             <p class="stat-card__value"><?= komodo_e((string) $notesCount) ?></p>
             <p class="compact-note stat-card__dek"><?= $notesCount === 0
                 ? 'None in plan.'
-                : 'See the import queue for ticker-level notes.'; ?></p>
+                : 'See Price Worklist for ticker-level notes.'; ?></p>
         </article>
     </div>
 

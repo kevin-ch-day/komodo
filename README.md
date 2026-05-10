@@ -4,11 +4,12 @@
 
 Komodo is a read-only research portal for the MariaDB database `gecko_research_database_prod`, for local use with XAMPP on Windows. It supports event-study **preparation** and data **readiness** review — not trading or investment advice.
 
-## Current milestone: Komodo v0.0.2
+## Current milestone: Komodo v0.0.3
 
 - **Read-only portal:** SELECT-only web app, safe `?page=` routing, no import buttons or edit forms.
+- **UX:** Price Worklist vs company drilldown vs Price Audit split; labeled-mobile tables on narrow viewports; sticky table headers disabled under the mobile nav band.
 - **Next phase:** benchmark / **index price import** via **external** scripts, then security prices — see [`docs/pre_import_checklist.md`](docs/pre_import_checklist.md).
-- **Milestone note:** [`docs/komodo_v0_0_2_milestone.md`](docs/komodo_v0_0_2_milestone.md)
+- **Milestone notes:** [`docs/komodo_v0_0_3_milestone.md`](docs/komodo_v0_0_3_milestone.md) (v0.0.3) · [`docs/komodo_v0_0_2_milestone.md`](docs/komodo_v0_0_2_milestone.md) (v0.0.2 baseline)
 - **Developer checks:** [`docs/developer_checks.md`](docs/developer_checks.md) — includes `tools/lint_all.bat`, `komodo_smoke.php`, `komodo_db_check.php`, `komodo_security_scan.php`. One-shot: `tools/check_all.bat`.
 - **Manual smoke pass:** [`docs/smoke_test_checklist.md`](docs/smoke_test_checklist.md)
 

@@ -17,13 +17,12 @@ function komodo_page_routes(): array
         'company' => ['template' => 'app/pages/company.php', 'title' => 'Company'],
         'dataset' => ['template' => 'app/pages/dataset.php', 'title' => 'Dataset'],
         'events' => ['template' => 'app/pages/events.php', 'title' => 'Events'],
-        'market-data' => ['template' => 'app/pages/market-data.php', 'title' => 'Market data'],
-        'price-import-queue' => ['template' => 'app/pages/price-import-queue.php', 'title' => 'Price import triage'],
-        'price-coverage' => ['template' => 'app/pages/price-coverage.php', 'title' => 'Price coverage'],
-        'price-audit' => ['template' => 'app/pages/price-audit.php', 'title' => 'Price audit'],
+        'market-data' => ['template' => 'app/pages/market-data.php', 'title' => 'Market Data Summary'],
+        'price-import-queue' => ['template' => 'app/pages/price-import-queue.php', 'title' => 'Price Worklist'],
+        'price-coverage' => ['template' => 'app/pages/price-coverage.php', 'title' => 'Coverage Summary'],
+        'price-audit' => ['template' => 'app/pages/price-audit.php', 'title' => 'Price Audit'],
         'research-quality' => ['template' => 'app/pages/research-quality.php', 'title' => 'Research quality'],
         'data-gaps' => ['template' => 'app/pages/data-gaps.php', 'title' => 'Data gaps'],
-        'pipeline' => ['template' => 'app/pages/pipeline.php', 'title' => 'Pipeline'],
     ];
 }
 
@@ -56,7 +55,6 @@ function komodo_sidebar_route_label(string $routeKey): string
         'price-audit' => 'Price Audit',
         'research-quality' => 'Research Quality',
         'data-gaps' => 'Data Gaps',
-        'pipeline' => 'Pipeline Status',
         default => ucwords(strtolower(komodo_page_routes()[$routeKey]['title'] ?? $routeKey)),
     };
 }
@@ -87,7 +85,7 @@ function komodo_sidebar_nav_groups(): array
         [
             'id' => 'nav-quality',
             'heading' => 'Quality',
-            'keys' => ['research-quality', 'data-gaps', 'pipeline'],
+            'keys' => ['research-quality', 'data-gaps'],
         ],
     ];
 }

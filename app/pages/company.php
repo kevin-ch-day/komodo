@@ -26,6 +26,14 @@ $securities = (array) ($cd['securities'] ?? []);
 $events = (array) ($cd['events'] ?? []);
 $trace = (array) ($cd['trace_sources'] ?? []);
 
+$companyNotFound = !empty($cd['not_found']);
+$heroTitle = 'Company';
+if ($companyNotFound) {
+    $heroTitle = 'Company not found';
+} elseif ($profile !== null) {
+    $heroTitle = (string) ($profile['display_name'] ?? 'Company');
+}
+
 ?>
 <section class="panel shell-section company-page" aria-labelledby="company-heading">
     <nav class="market-md-related" aria-label="Back links">
@@ -34,9 +42,11 @@ $trace = (array) ($cd['trace_sources'] ?? []);
 
     <div class="companies-hero company-hero" aria-label="Company detail header">
         <div class="companies-hero__left">
-            <h2 id="company-heading" class="companies-hero__title"><?= $profile ? komodo_e((string) ($profile['display_name'] ?? 'Company')) : 'Company' ?></h2>
+            <h2 id="company-heading" class="companies-hero__title"><?= komodo_e($heroTitle) ?></h2>
             <p class="compact-note company-hero__portal-note">Read-only cybersecurity–finance drilldown — not trading or investment advice.</p>
-            <?php if ($profile) { ?>
+            <?php if ($companyNotFound) { ?>
+                <p class="companies-hero__subtitle">No company matches <code class="inline-code">company_id=<?= komodo_e((string) ($cd['company_id'] ?? '')) ?></code> in the catalog.</p>
+            <?php } elseif ($profile) { ?>
                 <p class="companies-hero__subtitle">
                     <?= komodo_e((string) ($profile['legal_name'] ?? '')) ?>
                     <?php if (($profile['sector_name'] ?? '') !== '' || ($profile['industry_name'] ?? '') !== '') { ?>
@@ -63,12 +73,12 @@ $trace = (array) ($cd['trace_sources'] ?? []);
 
             <?php if (!$cd['available']) { ?>
                 <span class="badge badge--primary badge--offline">Offline</span>
+            <?php } elseif ($companyNotFound) { ?>
+                <span class="badge badge--primary badge--missing">Not found</span>
+            <?php } elseif (!empty($cd['partial'])) { ?>
+                <span class="badge badge--primary badge--degraded">Partial</span>
             <?php } else { ?>
-                <?php if (!empty($cd['partial'])) { ?>
-                    <span class="badge badge--primary badge--degraded">Partial</span>
-                <?php } else { ?>
-                    <span class="badge badge--primary badge--live">Live</span>
-                <?php } ?>
+                <span class="badge badge--primary badge--live">Live</span>
             <?php } ?>
         </div>
         <div class="companies-hero__right" aria-label="Company drilldown status">
@@ -116,21 +126,35 @@ $trace = (array) ($cd['trace_sources'] ?? []);
         </div>
 
         <?php /* Securities table */ ?>
-        <h3 class="subsection-heading" id="company-securities">Securities / tickers</h3>
-        <p class="compact-note">This section is security/ticker-grain. A company may have multiple securities or historical tickers in scope.</p>
+        <h3 class="subsection-heading" id="company-securities">Market data — per security</h3>
+        <p class="compact-note">Grain: <code class="inline-code">vw_market_data_import_plan</code> joined to this company’s listings. <strong>Read the table below</strong> for this company’s dates, span status, missing range, next step, import notes, and <?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?> (same trading-day model as <a class="footer-top-link" href="index.php?page=price-audit#audit-aligned-density-heading">Price Audit</a>, which stays the raw proof). <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a> lists what to do next only.</p>
+        <details class="market-md-collapsible company-market-field-guide">
+            <summary>Field guide — common window / import patterns (SWI, DIS, FTNT, PANW, TSLA, FB/META, JBSAY)</summary>
+            <ul class="compact-note company-market-field-guide__list">
+                <li><strong>SWI-style gap:</strong> Event-linked security with prices that <strong>end before</strong> the plan window ends — extend daily imports through the missing range; the per-security row shows exact trailing dates.</li>
+                <li><strong>DIS-style refresh:</strong> Small <strong>end</strong> gap vs the plan — refresh or widen the vendor window through the plan end; often a minor CSV extend/re-import.</li>
+                <li><strong>FTNT / PANW (comparison, 2014–2017 floor):</strong> Long early plan windows for comparison names — backfill early daily bars only if that control is still in the analysis set; check import notes and <?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?> before deep history work.</li>
+                <li><strong>TSLA (high-volatility comparison):</strong> Same idea — extended backfill may be optional; notes may warn about volatility/wildcard usage.</li>
+                <li><strong>FB / META (lineage):</strong> Events may reference <code class="inline-code">FB</code> while files use <code class="inline-code">META</code> — map vendor rows to the correct <code class="inline-code">security_id</code>; span OK on <code class="inline-code">FB</code> does not fix source-label continuity. See <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a> and <a class="footer-top-link" href="index.php?page=price-audit#lineage-heading">Price Audit (lineage)</a> for policy.</li>
+                <li><strong>JBSAY (OTC ADR special source):</strong> Not a standard daily vendor pull — alternate OTC ADR historical source; plan <code class="inline-code">import_notes</code> usually call this out.</li>
+            </ul>
+            <p class="compact-note company-market-field-guide__footer">Proof tables, full plan rows, and technical counts stay on <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a> — not duplicated here.</p>
+        </details>
+        <p class="compact-note company-securities-mobile-hint">On very narrow screens this table becomes a tall card per security; a more compact “summary first, details expandable” layout may be added later.</p>
         <div class="table-scroll">
-            <table class="data-table data-table--sticky data-table--dense" aria-labelledby="company-securities">
+            <table class="data-table data-table--sticky data-table--dense data-table--company-securities data-table--labeled-mobile" aria-labelledby="company-securities">
                 <thead>
                     <tr>
-                        <th scope="col">Ticker</th>
                         <th scope="col">Security</th>
-                        <th scope="col">Exchange</th>
-                        <th scope="col">Active</th>
-                        <th scope="col">Role</th>
-                        <th scope="col" class="num">Events</th>
-                        <th scope="col">Suggested window</th>
-                        <th scope="col">Price coverage</th>
-                        <th scope="col">Notes</th>
+                        <th scope="col">Plan window</th>
+                        <th scope="col">Loaded span</th>
+                        <th scope="col">Span status</th>
+                        <th scope="col">What's wrong</th>
+                        <th scope="col">Missing daily range</th>
+                        <th scope="col">Suggested next action</th>
+                        <th scope="col"><?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?></th>
+                        <th scope="col">Import notes</th>
+                        <th scope="col" class="num">Linked events</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -143,41 +167,59 @@ $trace = (array) ($cd['trace_sources'] ?? []);
                         $covDesc = komodo_describe($covKey, 'coverage_status');
                         $covClass = komodo_coverage_badge_css($covKey);
                         $pr = (int) ($s['price_rows'] ?? 0);
-                        $first = komodo_normalize_date_string($s['first_price_date'] ?? null);
-                        $last = komodo_normalize_date_string($s['last_price_date'] ?? null);
-                        $span = $pr > 0 && $first && $last ? ($first . ' → ' . $last) : 'No prices loaded';
-                        [$noteDisp, $noteFull, $noteT] = komodo_note_preview(isset($s['import_notes']) ? (string) $s['import_notes'] : '', 140);
-                        $sd = komodo_normalize_date_string($s['suggested_import_start_date'] ?? null) ?? '';
-                        $ed = komodo_normalize_date_string($s['suggested_import_end_date'] ?? null) ?? '';
-                        $window = ($sd !== '' && $ed !== '') ? ($sd . ' → ' . $ed) : '—';
+                        [$noteDisp, $noteFull, $noteT] = komodo_note_preview(isset($s['import_notes']) ? (string) $s['import_notes'] : '', 200);
+                        $planWinHtml = komodo_html_date_window_stack(
+                            $s['suggested_import_start_date'] ?? null,
+                            $s['suggested_import_end_date'] ?? null
+                        );
+                        $loadedSpanHtml = $pr > 0
+                            ? komodo_html_date_window_stack($s['first_price_date'] ?? null, $s['last_price_date'] ?? null)
+                            : '';
+                        $explain = komodo_company_security_worklist_explain($s);
+                        $densityRow = is_array($s['aligned_daily_density'] ?? null) ? $s['aligned_daily_density'] : null;
+                        $tk = (string) ($s['ticker_symbol'] ?? '');
+                        $secName = (string) ($s['security_name'] ?? '');
+                        $exch = (string) ($s['exchange_code'] ?? '');
+                        $activeYes = ((int) ($s['is_active'] ?? 0)) === 1;
                         ?>
                         <tr title="<?= komodo_e('security_id=' . (string) ($s['security_id'] ?? '')) ?>">
-                            <td><code class="inline-code"><?= komodo_e((string) ($s['ticker_symbol'] ?? '')) ?></code></td>
-                            <td><?= komodo_e((string) ($s['security_name'] ?? '')) ?></td>
-                            <td class="compact-note"><?= komodo_e((string) ($s['exchange_code'] ?? '—')) ?></td>
-                            <td><?= !empty($s['is_active']) ? 'Yes' : 'No' ?></td>
-                            <td>
-                                <div class="label-stack">
-                                    <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
-                                    <?php if ($roleKey !== '') { ?>
-                                        <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e($roleKey) ?></code></span>
-                                    <?php } ?>
-                                </div>
-                            </td>
-                            <td class="num"><?= komodo_e((string) ((int) ($s['security_event_count'] ?? ($s['linked_event_count'] ?? 0)))) ?></td>
-                            <td class="compact-note"><?= komodo_e($window) ?></td>
-                            <td>
-                                <div class="label-stack">
-                                    <span class="label-primary">
-                                        <span class="coverage-badge <?= komodo_e($covClass) ?>"<?= $covDesc ? ' title="' . komodo_e($covDesc) . '"' : '' ?>><?= komodo_e($covLabel) ?></span>
-                                        <span class="compact-note">· <?= komodo_e((string) $pr) ?> rows</span>
+                            <td data-label="Security">
+                                <div class="label-stack company-security-identity">
+                                    <span class="label-primary"><?= komodo_e($secName !== '' ? $secName : $tk) ?></span>
+                                    <span class="label-secondary"><?php if ($tk !== '') { ?>
+                                        <a class="companies-link" href="index.php?page=price-import-queue" title="Price Worklist — find <?= komodo_e($tk) ?>"><code class="inline-code"><?= komodo_e($tk) ?></code></a>
+                                    <?php } else { ?>—<?php } ?>
+                                        <?php if ($exch !== '') { ?>
+                                            <span class="compact-note"><?= komodo_e(' · ' . $exch) ?></span>
+                                        <?php } ?>
+                                        <span class="compact-note"><?= komodo_e(' · ' . ($activeYes ? 'active' : 'inactive')) ?></span>
                                     </span>
-                                    <span class="label-secondary"><?= komodo_e($span) ?></span>
+                                    <span class="label-secondary"><?php if ($roleKey !== '') { ?>
+                                        <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
+                                        <code class="inline-code inline-code--subtle"><?= komodo_e($roleKey) ?></code>
+                                    <?php } else { ?>—<?php } ?></span>
                                 </div>
                             </td>
-                            <td class="compact-note"><?php if ($noteDisp !== '') { ?>
+                            <td class="triage-date-window-stack" data-label="Plan window"><?php echo $planWinHtml; ?></td>
+                            <td class="triage-date-window-stack" data-label="Loaded span"><?php if ($loadedSpanHtml !== '') {
+                                echo $loadedSpanHtml;
+                            } else { ?>
+                                <span class="compact-note"><?= komodo_e('No bars loaded') ?></span>
+                            <?php } ?></td>
+                            <td data-label="Span status">
+                                <div class="label-stack">
+                                    <span class="coverage-badge <?= komodo_e($covClass) ?>"<?= $covDesc ? ' title="' . komodo_e($covDesc) . '"' : '' ?>><?= komodo_e($covLabel) ?></span>
+                                    <span class="compact-note"><?= komodo_e((string) $pr) ?> price rows</span>
+                                </div>
+                            </td>
+                            <td class="compact-note company-security-problem-cell" data-label="What's wrong"><?= komodo_e($explain['problem']) ?></td>
+                            <td class="compact-note" data-label="Missing daily range"><?= komodo_e($explain['missing']) ?></td>
+                            <td class="compact-note" data-label="Next action"><?= komodo_e($explain['next']) ?></td>
+                            <td class="compact-note" data-label="<?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?>"><?php echo komodo_html_aligned_density_compact($densityRow); ?></td>
+                            <td class="compact-note" data-label="Import notes"><?php if ($noteDisp !== '') { ?>
                                 <span<?= $noteT ? ' title="' . $noteFull . '"' : '' ?>><?= $noteDisp ?></span>
                             <?php } else { echo '—'; } ?></td>
+                            <td class="num" data-label="Linked events"><?= komodo_e((string) ((int) ($s['security_event_count'] ?? ($s['linked_event_count'] ?? 0)))) ?></td>
                         </tr>
                     <?php } ?>
                 </tbody>
@@ -190,7 +232,7 @@ $trace = (array) ($cd['trace_sources'] ?? []);
             <p class="compact-note">No linked cyber events found through this company’s securities.</p>
         <?php } else { ?>
             <div class="table-scroll">
-                <table class="data-table data-table--sticky data-table--dense" aria-labelledby="company-events">
+                <table class="data-table data-table--sticky data-table--dense data-table--labeled-mobile" aria-labelledby="company-events">
                     <thead>
                         <tr>
                             <th scope="col">Event</th>
@@ -220,13 +262,13 @@ $trace = (array) ($cd['trace_sources'] ?? []);
                             }
                             ?>
                             <tr title="<?= komodo_e('cyber_event_id=' . (string) ($e['cyber_event_id'] ?? '')) ?>">
-                                <td><?= komodo_e((string) ($e['event_name'] ?? '')) ?></td>
-                                <td class="compact-note"><?= komodo_e(komodo_format_identifier((string) ($e['event_type'] ?? '—'))) ?></td>
-                                <td class="compact-note"><?= komodo_e((string) ($e['severity_level'] ?? '—')) ?></td>
-                                <td class="compact-note"><?= komodo_e((string) ($e['confidence_level'] ?? '—')) ?></td>
-                                <td class="compact-note"><?= komodo_e($disc) ?></td>
-                                <td class="compact-note"><?= komodo_e($ftd) ?></td>
-                                <td class="compact-note">
+                                <td data-label="Event"><?= komodo_e((string) ($e['event_name'] ?? '')) ?></td>
+                                <td class="compact-note" data-label="Type"><?= komodo_e(komodo_format_identifier((string) ($e['event_type'] ?? '—'))) ?></td>
+                                <td class="compact-note" data-label="Severity"><?= komodo_e((string) ($e['severity_level'] ?? '—')) ?></td>
+                                <td class="compact-note" data-label="Confidence"><?= komodo_e((string) ($e['confidence_level'] ?? '—')) ?></td>
+                                <td class="compact-note" data-label="Disclosure date"><?= komodo_e($disc) ?></td>
+                                <td class="compact-note" data-label="First trading day"><?= komodo_e($ftd) ?></td>
+                                <td class="compact-note" data-label="Readiness">
                                     <div class="label-stack">
                                         <span class="label-primary"><?= komodo_e($readyText) ?></span>
                                         <?php if (is_string($readyRaw) && $readyRaw !== '' && $readyRaw !== $readyText) { ?>
@@ -244,14 +286,14 @@ $trace = (array) ($cd['trace_sources'] ?? []);
         <?php /* Market data rollup */ ?>
         <h3 class="subsection-heading" id="company-coverage">Market data coverage</h3>
         <section class="panel-nested panel-muted market-md-snapshot-card">
-            <p class="compact-note">This company’s tickers are evaluated against the suggested import windows in <code class="inline-code inline-code--subtle">vw_market_data_import_plan</code>.</p>
+            <p class="compact-note">Evaluated against suggested import windows in <code class="inline-code inline-code--subtle">vw_market_data_import_plan</code> (same rules as <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a>).</p>
             <?php if ($summary) { ?>
                 <ul class="market-insight-metrics" aria-label="Company market coverage metrics">
                     <li><strong><?= komodo_e((string) ($summary['total_securities'] ?? 0)) ?></strong> tickers</li>
                     <li><strong><?= komodo_e((string) ($summary['securities_with_prices'] ?? 0)) ?></strong> with prices</li>
                     <li><strong><?= komodo_e((string) ($summary['securities_without_prices'] ?? 0)) ?></strong> not started</li>
                 </ul>
-                <p class="market-insight-bar__next"><strong>Next:</strong> Import index prices first, then this company’s event-linked tickers.</p>
+                <p class="compact-note company-coverage-next"><strong>Where next:</strong> <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a> (imports) · <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a> (full plan &amp; density) · <a class="footer-top-link" href="index.php?page=market-data">Market Data Summary</a> (landing).</p>
             <?php } ?>
         </section>
 

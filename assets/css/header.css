@@ -1,56 +1,5 @@
-﻿/* header — site title row + env banners */
-/* ——— Header ——— */
-.site-header {
-    background: linear-gradient(165deg, var(--chrome-tint-top) 0%, var(--chrome-tint-bottom) 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 1.5rem 0 1.35rem;
-    box-shadow: var(--shadow-soft);
-}
-
-.header-inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1.25rem 2rem;
-}
-
-.header-brand {
-    flex: 1 1 16rem;
-    min-width: 0;
-}
-
-.site-title {
-    margin: 0;
-    font-size: 1.85rem;
-    font-weight: 650;
-    letter-spacing: -0.03em;
-    color: var(--text);
-    line-height: 1.15;
-}
-
-.site-subtitle {
-    margin: 0.4rem 0 0;
-    font-size: 1.05rem;
-    color: var(--text-muted);
-    font-weight: 400;
-}
-
-.header-purpose {
-    margin: 0.65rem 0 0;
-    font-size: 0.95rem;
-    color: var(--text-dim);
-    max-width: 36rem;
-}
-
-.header-status {
-    flex: 0 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.65rem;
-}
-
+﻿/* header — banner stack + env-note alerts (no unused site-header chrome) */
+/* ——— Banner stack ——— */
 .banner-stack {
     width: 100%;
     max-width: 22rem;
@@ -61,10 +10,6 @@
 }
 
 @media (max-width: 40rem) {
-    .header-status {
-        align-items: flex-start;
-    }
-
     .banner-stack {
         max-width: none;
     }

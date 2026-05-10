@@ -58,17 +58,8 @@ foreach ($lineageRows as $lr) {
 
 ?>
 <section class="panel shell-section price-audit-page" aria-labelledby="audit-heading">
-    <h2 id="audit-heading">Price audit</h2>
-    <p class="section-lead">Technical audit tables for <code class="inline-code">vw_market_data_import_plan</code>, indexes, lineage, aligned trading-day density, and whitelist row counts. For the short readiness answer (&ldquo;are we event-study ready, what is blocking?&rdquo;), use <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>; for the action worklist, use <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>.</p>
-
-    <nav class="market-md-related" aria-label="Related pages">
-        <span class="compact-note">Related:</span>
-        <a class="footer-top-link" href="index.php?page=market-data">Market Data</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>
-    </nav>
+    <h2 id="audit-heading">Price Audit</h2>
+    <p class="section-lead">Technical audit tables for <code class="inline-code">vw_market_data_import_plan</code>, indexes, lineage, aligned trading-day density, and whitelist row counts. For the short readiness answer (&ldquo;are we event-study ready, what is blocking?&rdquo;), use <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a>; for CSV and import actions, use <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a>.</p>
 
     <?php if (!$md['available']) { ?>
         <p class="env-note env-note--warn" role="status">Audit tables are hidden until the database is connected.</p>
@@ -86,14 +77,14 @@ foreach ($lineageRows as $lr) {
         </section>
 
         <h3 class="subsection-heading" id="loaded-incomplete">Loaded but incomplete</h3>
-        <p class="compact-note">Securities with price rows where the first or last loaded trade date is <strong>more than <?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar days</strong> outside the suggested import window at that end — not analysis-ready for that window. Misalignments <strong>within</strong> that slack (e.g. Jan 1 vs Jan 2) are <strong>not</strong> listed here (same rule as Price import triage). Weekly or sparse series can still pass this span test — density is a separate check.</p>
+        <p class="compact-note">Securities with price rows where the first or last loaded trade date is <strong>more than <?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar days</strong> outside the suggested import window at that end — not analysis-ready for that window. Misalignments <strong>within</strong> that slack (e.g. Jan 1 vs Jan 2) are <strong>not</strong> listed here (same rule as Price Worklist). Weekly or sparse series can still pass this span test — density is a separate check.</p>
         <?php if ($md['security_rows'] === [] && $md['partial']) { ?>
             <p class="compact-note env-note env-note--warn">Security rows could not be loaded.</p>
         <?php } elseif ($loadedInc === []) { ?>
             <p class="compact-note" role="status">None — no loaded rows are flagged missing start or end of the suggested window.</p>
         <?php } else { ?>
             <div class="table-scroll">
-                <table class="data-table data-table--sticky" aria-labelledby="loaded-incomplete">
+                <table class="data-table data-table--sticky data-table--labeled-mobile" aria-labelledby="loaded-incomplete">
                     <thead>
                         <tr>
                             <th scope="col">Ticker</th>
@@ -122,9 +113,9 @@ foreach ($lineageRows as $lr) {
                             $roleDesc = $roleKey !== '' ? komodo_describe($roleKey, 'role') : null;
                             ?>
                             <tr>
-                                <td><code class="inline-code"><?= komodo_e((string) ($row['ticker_symbol'] ?? '')) ?></code></td>
-                                <td><?= komodo_e((string) ($row['display_name'] ?: ($row['security_name'] ?? ''))) ?></td>
-                                <td>
+                                <td data-label="Ticker"><code class="inline-code"><?= komodo_e((string) ($row['ticker_symbol'] ?? '')) ?></code></td>
+                                <td data-label="Company"><?= komodo_e((string) ($row['display_name'] ?: ($row['security_name'] ?? ''))) ?></td>
+                                <td data-label="Role">
                                     <div class="label-stack">
                                         <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
                                         <?php if ($roleKey !== '') { ?>
@@ -132,10 +123,10 @@ foreach ($lineageRows as $lr) {
                                         <?php } ?>
                                     </div>
                                 </td>
-                                <td><?= $sd !== '' && $ed !== '' ? komodo_e($sd . ' → ' . $ed) : '—'; ?></td>
-                                <td class="compact-note"><?php echo $barSpan; ?></td>
-                                <td class="num"><?= komodo_e((string) ($row['price_rows'] ?? 0)) ?></td>
-                                <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($st)) ?>"<?= $stDesc ? ' title="' . komodo_e($stDesc) . '"' : '' ?>><?= komodo_e($stLabel) ?></span></td>
+                                <td data-label="Suggested window"><?= $sd !== '' && $ed !== '' ? komodo_e($sd . ' → ' . $ed) : '—'; ?></td>
+                                <td class="compact-note" data-label="First / last bar"><?php echo $barSpan; ?></td>
+                                <td class="num" data-label="Price rows"><?= komodo_e((string) ($row['price_rows'] ?? 0)) ?></td>
+                                <td data-label="Issue / status"><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($st)) ?>"<?= $stDesc ? ' title="' . komodo_e($stDesc) . '"' : '' ?>><?= komodo_e($stLabel) ?></span></td>
                             </tr>
                         <?php } ?>
                     </tbody>
@@ -156,7 +147,7 @@ foreach ($lineageRows as $lr) {
                 <p class="compact-note" role="status">No plan rows to evaluate.</p>
             <?php } else { ?>
                 <div class="table-scroll">
-                    <table class="data-table data-table--dense" aria-labelledby="audit-aligned-density-heading">
+                    <table class="data-table data-table--dense data-table--labeled-mobile" aria-labelledby="audit-aligned-density-heading">
                         <thead>
                             <tr>
                                 <th scope="col">Ticker</th>
@@ -185,13 +176,13 @@ foreach ($lineageRows as $lr) {
                                 $spanAl = ($fa !== null && $la !== null) ? ($fa . ' → ' . $la) : '—';
                                 ?>
                                 <tr>
-                                    <td><code class="inline-code"><?= komodo_e((string) ($drow['ticker_symbol'] ?? '')) ?></code></td>
-                                    <td><?= komodo_e(komodo_label($dRole, 'role')) ?></td>
-                                    <td class="compact-note"><?= komodo_e($win) ?></td>
-                                    <td class="num"><?= komodo_e((string) $exp) ?></td>
-                                    <td class="num"><?= komodo_e((string) $load) ?></td>
-                                    <td class="num"><?= komodo_e($ratioStr) ?></td>
-                                    <td class="compact-note"><?= komodo_e($spanAl) ?></td>
+                                    <td data-label="Ticker"><code class="inline-code"><?= komodo_e((string) ($drow['ticker_symbol'] ?? '')) ?></code></td>
+                                    <td data-label="Role"><?= komodo_e(komodo_label($dRole, 'role')) ?></td>
+                                    <td class="compact-note" data-label="Suggested window"><?= komodo_e($win) ?></td>
+                                    <td class="num" data-label="Expected US TDs"><?= komodo_e((string) $exp) ?></td>
+                                    <td class="num" data-label="Loaded (aligned)"><?= komodo_e((string) $load) ?></td>
+                                    <td class="num" data-label="Ratio"><?= komodo_e($ratioStr) ?></td>
+                                    <td class="compact-note" data-label="First / last aligned"><?= komodo_e($spanAl) ?></td>
                                 </tr>
                             <?php } ?>
                         </tbody>
@@ -225,7 +216,7 @@ foreach ($lineageRows as $lr) {
             </ul>
             <?php if ($lineageFb !== null || $lineageMeta !== null) { ?>
                 <div class="table-scroll">
-                    <table class="data-table data-table--dense" aria-label="Lineage tickers from plan">
+                    <table class="data-table data-table--dense data-table--labeled-mobile" aria-label="Lineage tickers from plan">
                         <thead>
                             <tr>
                                 <th scope="col">Ticker</th>
@@ -248,12 +239,12 @@ foreach ($lineageRows as $lr) {
                                 $lrRole = (string) ($lr['price_import_role'] ?? '');
                                 ?>
                                 <tr>
-                                    <td><code class="inline-code"><?= komodo_e((string) ($lr['ticker_symbol'] ?? '')) ?></code></td>
-                                    <td><?= komodo_e(komodo_label($lrRole, 'role')) ?></td>
-                                    <td class="num"><?= isset($lr['linked_event_count']) ? komodo_e((string) $lr['linked_event_count']) : '—' ?></td>
-                                    <td class="num"><?= komodo_e((string) ($lr['price_rows'] ?? 0)) ?></td>
-                                    <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($lst)) ?>"<?= $lstDesc ? ' title="' . komodo_e($lstDesc) . '"' : '' ?>><?= komodo_e($lstLabel) ?></span></td>
-                                    <td class="compact-note"><?php if ($lnDisp !== '') { ?>
+                                    <td data-label="Ticker"><code class="inline-code"><?= komodo_e((string) ($lr['ticker_symbol'] ?? '')) ?></code></td>
+                                    <td data-label="Role"><?= komodo_e(komodo_label($lrRole, 'role')) ?></td>
+                                    <td class="num" data-label="Events"><?= isset($lr['linked_event_count']) ? komodo_e((string) $lr['linked_event_count']) : '—' ?></td>
+                                    <td class="num" data-label="Price rows"><?= komodo_e((string) ($lr['price_rows'] ?? 0)) ?></td>
+                                    <td data-label="Status"><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($lst)) ?>"<?= $lstDesc ? ' title="' . komodo_e($lstDesc) . '"' : '' ?>><?= komodo_e($lstLabel) ?></span></td>
+                                    <td class="compact-note" data-label="Notes"><?php if ($lnDisp !== '') { ?>
                                         <span<?= $lnTitle ? ' title="' . $lnFull . '"' : '' ?>><?= $lnDisp ?></span>
                                     <?php } else {
                                         echo '—';
@@ -267,7 +258,7 @@ foreach ($lineageRows as $lr) {
         </section>
 
         <h3 class="subsection-heading" id="priority-attention">Priority attention</h3>
-        <p class="compact-note">Sorted for action: event-linked first, higher event count, import-note lineage flags, not-started and window gaps before other problem states. Rows with multiple events or lineage notes are highlighted. For an action-only worklist that hides window-complete tickers, use <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>.</p>
+        <p class="compact-note">Sorted for action: event-linked first, higher event count, import-note lineage flags, not-started and window gaps before other problem states. Rows with multiple events or lineage notes are highlighted. For an action-only worklist that hides window-complete tickers, use <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a>.</p>
         <?php if ($md['security_rows'] === [] && $md['partial']) { ?>
             <p class="compact-note env-note env-note--warn">Security rows could not be loaded.</p>
         <?php } elseif (($md['top_problem_securities'] ?? []) === [] && ($md['security_rows'] ?? []) !== []) { ?>
@@ -276,7 +267,7 @@ foreach ($lineageRows as $lr) {
             <p class="compact-note">—</p>
         <?php } else { ?>
             <div class="table-scroll">
-                <table class="data-table data-table--sticky" aria-labelledby="priority-attention">
+                <table class="data-table data-table--sticky data-table--labeled-mobile" aria-labelledby="priority-attention">
                     <thead>
                         <tr>
                             <th scope="col">Ticker</th>
@@ -301,9 +292,9 @@ foreach ($lineageRows as $lr) {
                             $trClass = komodo_priority_attention_row_class($prob);
                             ?>
                             <tr<?= $trClass !== '' ? ' class="' . komodo_e($trClass) . '"' : '' ?>>
-                                <td><code class="inline-code"><?= komodo_e((string) ($prob['ticker_symbol'] ?? '')) ?></code></td>
-                                <td><?= komodo_e((string) ($prob['display_name'] ?: ($prob['security_name'] ?? ''))) ?></td>
-                                <td>
+                                <td data-label="Ticker"><code class="inline-code"><?= komodo_e((string) ($prob['ticker_symbol'] ?? '')) ?></code></td>
+                                <td data-label="Company"><?= komodo_e((string) ($prob['display_name'] ?: ($prob['security_name'] ?? ''))) ?></td>
+                                <td data-label="Role">
                                     <div class="label-stack">
                                         <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
                                         <?php if ($roleKey !== '') { ?>
@@ -311,16 +302,16 @@ foreach ($lineageRows as $lr) {
                                         <?php } ?>
                                     </div>
                                 </td>
-                                <td class="num"><?= isset($prob['linked_event_count']) ? komodo_e((string) $prob['linked_event_count']) : '—' ?></td>
-                                <td><?php
+                                <td class="num" data-label="Events"><?= isset($prob['linked_event_count']) ? komodo_e((string) $prob['linked_event_count']) : '—' ?></td>
+                                <td data-label="Suggested window"><?php
                                     $sd = komodo_normalize_date_string($prob['suggested_import_start_date'] ?? null) ?? '';
                                     $ed = komodo_normalize_date_string($prob['suggested_import_end_date'] ?? null) ?? '';
                             echo $sd !== '' && $ed !== ''
                                 ? komodo_e($sd . ' → ' . $ed)
                                 : '—'; ?></td>
-                                <td class="num"><?= komodo_e((string) ($prob['price_rows'] ?? 0)) ?></td>
-                                <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($stProb)) ?>"<?= $stProbDesc ? ' title="' . komodo_e($stProbDesc) . '"' : '' ?>><?= komodo_e($stProbLabel) ?></span></td>
-                                <td class="compact-note"><?php if ($noteDisp !== '') { ?>
+                                <td class="num" data-label="Price rows"><?= komodo_e((string) ($prob['price_rows'] ?? 0)) ?></td>
+                                <td data-label="Status"><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($stProb)) ?>"<?= $stProbDesc ? ' title="' . komodo_e($stProbDesc) . '"' : '' ?>><?= komodo_e($stProbLabel) ?></span></td>
+                                <td class="compact-note" data-label="Notes"><?php if ($noteDisp !== '') { ?>
                                     <span<?= $hasTitle ? ' title="' . $noteFull . '"' : '' ?>><?= $noteDisp ?></span>
                                 <?php } else {
                                     echo '—';
@@ -354,7 +345,7 @@ foreach ($lineageRows as $lr) {
             <p class="compact-note env-note env-note--warn">Index coverage could not be loaded.</p>
         <?php } else { ?>
             <div class="table-scroll">
-                <table class="data-table data-table--sticky" aria-labelledby="index-coverage">
+                <table class="data-table data-table--sticky data-table--labeled-mobile" aria-labelledby="index-coverage">
                     <thead>
                         <tr>
                             <th scope="col">Code</th>
@@ -372,12 +363,12 @@ foreach ($lineageRows as $lr) {
                             $istDesc = komodo_describe($ist, 'coverage_status');
                             ?>
                             <tr>
-                                <td><code class="inline-code"><?= komodo_e((string) ($ix['index_code'] ?? '')) ?></code></td>
-                                <td><?= komodo_e((string) ($ix['index_name'] ?? '')) ?></td>
-                                <td class="num"><?= komodo_e((string) ($ix['price_rows'] ?? '0')) ?></td>
-                                <td><?= $formatDateCell(komodo_normalize_date_string($ix['first_price_date'] ?? null)) ?></td>
-                                <td><?= $formatDateCell(komodo_normalize_date_string($ix['last_price_date'] ?? null)) ?></td>
-                                <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($ist, 'index')) ?>"<?= $istDesc ? ' title="' . komodo_e($istDesc) . '"' : '' ?>><?= komodo_e($istLabel) ?></span></td>
+                                <td data-label="Code"><code class="inline-code"><?= komodo_e((string) ($ix['index_code'] ?? '')) ?></code></td>
+                                <td data-label="Name"><?= komodo_e((string) ($ix['index_name'] ?? '')) ?></td>
+                                <td class="num" data-label="Rows"><?= komodo_e((string) ($ix['price_rows'] ?? '0')) ?></td>
+                                <td data-label="First"><?= $formatDateCell(komodo_normalize_date_string($ix['first_price_date'] ?? null)) ?></td>
+                                <td data-label="Last"><?= $formatDateCell(komodo_normalize_date_string($ix['last_price_date'] ?? null)) ?></td>
+                                <td data-label="Status"><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($ist, 'index')) ?>"<?= $istDesc ? ' title="' . komodo_e($istDesc) . '"' : '' ?>><?= komodo_e($istLabel) ?></span></td>
                             </tr>
                         <?php } ?>
                     </tbody>
@@ -390,14 +381,14 @@ foreach ($lineageRows as $lr) {
             <p class="compact-note env-note env-note--warn">Security coverage summary unavailable.</p>
         <?php } else { ?>
             <div class="table-scroll">
-                <table class="data-table role-summary-table" aria-labelledby="role-summary">
+                <table class="data-table role-summary-table data-table--labeled-mobile" aria-labelledby="role-summary">
                     <thead>
                         <tr>
                             <th scope="col">Role</th>
                             <th scope="col" class="num">Total</th>
                             <th scope="col" class="num">Not started</th>
                             <th scope="col" class="num">Has prices</th>
-                            <th scope="col" class="num">Covers window</th>
+                            <th scope="col" class="num">Covers suggested window</th>
                             <th scope="col" class="num">Missing start</th>
                             <th scope="col" class="num">Missing end</th>
                         </tr>
@@ -409,18 +400,18 @@ foreach ($lineageRows as $lr) {
                             $rdesc = komodo_describe($rk, 'role');
                             ?>
                             <tr>
-                                <th scope="row">
+                                <th scope="row" data-label="Role">
                                     <div class="label-stack">
                                         <span class="label-primary"<?= $rdesc ? ' title="' . komodo_e($rdesc) . '"' : '' ?>><?= komodo_e($rlabel) ?></span>
                                         <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e($rk) ?></code></span>
                                     </div>
                                 </th>
-                                <td class="num"><?= komodo_e((string) ($b['total'] ?? 0)) ?></td>
-                                <td class="num"><?= komodo_e((string) ($b['not_started'] ?? 0)) ?></td>
-                                <td class="num"><?= komodo_e((string) ($b['has_prices'] ?? 0)) ?></td>
-                                <td class="num"><?= komodo_e((string) ($b['covers_suggested_window'] ?? 0)) ?></td>
-                                <td class="num"><?= komodo_e((string) ($b['missing_start_window'] ?? 0)) ?></td>
-                                <td class="num"><?= komodo_e((string) ($b['missing_end_window'] ?? 0)) ?></td>
+                                <td class="num" data-label="Total"><?= komodo_e((string) ($b['total'] ?? 0)) ?></td>
+                                <td class="num" data-label="Not started"><?= komodo_e((string) ($b['not_started'] ?? 0)) ?></td>
+                                <td class="num" data-label="Has prices"><?= komodo_e((string) ($b['has_prices'] ?? 0)) ?></td>
+                                <td class="num" data-label="Covers suggested window"><?= komodo_e((string) ($b['covers_suggested_window'] ?? 0)) ?></td>
+                                <td class="num" data-label="Missing start"><?= komodo_e((string) ($b['missing_start_window'] ?? 0)) ?></td>
+                                <td class="num" data-label="Missing end"><?= komodo_e((string) ($b['missing_end_window'] ?? 0)) ?></td>
                             </tr>
                         <?php } ?>
                     </tbody>
@@ -434,7 +425,7 @@ foreach ($lineageRows as $lr) {
             <h3 class="subsection-heading" id="full-plan-heading">Full market data plan</h3>
             <p class="compact-note"><code class="inline-code">vw_market_data_import_plan</code> — <?= komodo_e((string) $totalPlan) ?> securities.</p>
             <div class="table-scroll">
-                <table class="data-table data-table--sticky data-table--dense" aria-labelledby="full-plan-heading">
+                <table class="data-table data-table--sticky data-table--dense data-table--labeled-mobile data-table--audit-full-plan" aria-labelledby="full-plan-heading">
                     <thead>
                         <tr>
                             <th scope="col">Ticker</th>
@@ -442,7 +433,7 @@ foreach ($lineageRows as $lr) {
                             <th scope="col">Role</th>
                             <th scope="col">Exch.</th>
                             <th scope="col" class="num">Events</th>
-                            <th scope="col">Suggested window</th>
+                            <th scope="col">Plan window</th>
                             <th scope="col" class="num">Price rows</th>
                             <th scope="col">First / last bar</th>
                             <th scope="col">Status</th>
@@ -455,21 +446,22 @@ foreach ($lineageRows as $lr) {
                             $fstLabel = komodo_label($fst, 'coverage_status');
                             $fstDesc = komodo_describe($fst, 'coverage_status');
                             [$nDisp, $nFull, $hasTtl] = komodo_note_preview(isset($fw['import_notes']) ? (string) $fw['import_notes'] : '', 72);
-                            $sd = komodo_normalize_date_string($fw['suggested_import_start_date'] ?? null) ?? '';
-                            $ed = komodo_normalize_date_string($fw['suggested_import_end_date'] ?? null) ?? '';
-                            $wf = komodo_normalize_date_string($fw['first_price_date'] ?? null);
-                            $wl = komodo_normalize_date_string($fw['last_price_date'] ?? null);
-                            $barSpan = ($wf ?? '') !== '' && ($wl ?? '') !== ''
-                                ? komodo_e($wf . ' → ' . $wl)
-                                : '—';
+                            $planWinHtml = komodo_html_date_window_stack(
+                                $fw['suggested_import_start_date'] ?? null,
+                                $fw['suggested_import_end_date'] ?? null
+                            );
+                            $barSpanHtml = komodo_html_date_window_stack(
+                                $fw['first_price_date'] ?? null,
+                                $fw['last_price_date'] ?? null
+                            );
                             $roleKey = (string) ($fw['price_import_role'] ?? '');
                             $roleLabel = komodo_label($roleKey, 'role');
                             $roleDesc = $roleKey !== '' ? komodo_describe($roleKey, 'role') : null;
                             ?>
                             <tr>
-                                <td><code class="inline-code"><?= komodo_e((string) ($fw['ticker_symbol'] ?? '')) ?></code></td>
-                                <td><?= komodo_e((string) ($fw['display_name'] ?: ($fw['security_name'] ?? ''))) ?></td>
-                                <td>
+                                <td data-label="Ticker"><code class="inline-code"><?= komodo_e((string) ($fw['ticker_symbol'] ?? '')) ?></code></td>
+                                <td data-label="Company"><?= komodo_e((string) ($fw['display_name'] ?: ($fw['security_name'] ?? ''))) ?></td>
+                                <td data-label="Role">
                                     <div class="label-stack">
                                         <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
                                         <?php if ($roleKey !== '') { ?>
@@ -477,13 +469,13 @@ foreach ($lineageRows as $lr) {
                                         <?php } ?>
                                     </div>
                                 </td>
-                                <td><?= komodo_e((string) ($fw['exchange_code'] ?? '—')) ?></td>
-                                <td class="num"><?= isset($fw['linked_event_count']) ? komodo_e((string) $fw['linked_event_count']) : '—' ?></td>
-                                <td><?= $sd !== '' && $ed !== '' ? komodo_e($sd . ' → ' . $ed) : '—'; ?></td>
-                                <td class="num"><?= komodo_e((string) ($fw['price_rows'] ?? 0)) ?></td>
-                                <td class="compact-note"><?php echo $barSpan; ?></td>
-                                <td><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($fst)) ?>"<?= $fstDesc ? ' title="' . komodo_e($fstDesc) . '"' : '' ?>><?= komodo_e($fstLabel) ?></span></td>
-                                <td class="compact-note"><?php if ($nDisp !== '') { ?>
+                                <td data-label="Exch."><?= komodo_e((string) ($fw['exchange_code'] ?? '—')) ?></td>
+                                <td class="num" data-label="Events"><?= isset($fw['linked_event_count']) ? komodo_e((string) $fw['linked_event_count']) : '—' ?></td>
+                                <td class="triage-date-window-stack" data-label="Plan window"><?= $planWinHtml ?></td>
+                                <td class="num" data-label="Price rows"><?= komodo_e((string) ($fw['price_rows'] ?? 0)) ?></td>
+                                <td class="triage-date-window-stack" data-label="First / last bar"><?= $barSpanHtml ?></td>
+                                <td data-label="Status"><span class="coverage-badge <?= komodo_e(komodo_coverage_badge_css($fst)) ?>"<?= $fstDesc ? ' title="' . komodo_e($fstDesc) . '"' : '' ?>><?= komodo_e($fstLabel) ?></span></td>
+                                <td class="compact-note" data-label="Notes"><?php if ($nDisp !== '') { ?>
                                     <span<?= $hasTtl ? ' title="' . $nFull . '"' : '' ?>><?= $nDisp ?></span>
                                 <?php } else {
                                     echo '—';

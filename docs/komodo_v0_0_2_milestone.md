@@ -1,5 +1,7 @@
 # Komodo v0.0.2 — milestone note
 
+> **Historical baseline.** For the current release line and UX notes, see [`komodo_v0_0_3_milestone.md`](komodo_v0_0_3_milestone.md).
+
 Concise project snapshot for closing the read-only web portal milestone before external price import work.
 
 ---

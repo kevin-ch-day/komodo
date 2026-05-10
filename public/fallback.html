@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#16151b">
+    <meta name="robots" content="noindex">
+    <title>Komodo — unavailable</title>
+    <style>
+        body { font-family: system-ui, "Segoe UI", sans-serif; margin: 0; min-height: 100vh; background: #0f0e12; color: #e8e6ef; line-height: 1.5; }
+        .wrap { max-width: 36rem; margin: 0 auto; padding: 2rem 1.25rem; }
+        h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.75rem; }
+        p { margin: 0 0 1rem; color: #c9c5d4; }
+        ul { margin: 0 0 1.25rem; padding-left: 1.25rem; color: #c9c5d4; }
+        li { margin-bottom: 0.35rem; }
+        .actions { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; margin: 1.25rem 0 0; }
+        a { color: #8ab4ff; }
+        a:visited { color: #b39ddb; }
+        .note { font-size: 0.875rem; color: #9e96ab; margin-top: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Komodo is not available</h1>
+        <p>This is a static page: it loads even when the PHP application or database is not working. Use it as a default landing point while you fix the environment.</p>
+        <p>Common checks:</p>
+        <ul>
+            <li>PHP and the web server are running.</li>
+            <li><code>app/config/local.php</code> exists and matches your MariaDB settings.</li>
+            <li>MariaDB is reachable (host, port, credentials).</li>
+            <li>Review the PHP / web server error log for the real failure.</li>
+        </ul>
+        <div class="actions">
+            <a href="index.php?page=dashboard">Try opening Komodo again</a>
+            <a href="fallback.html">Reload this page</a>
+        </div>
+        <p class="note">Bookmark this file as <code>public/fallback.html</code> if you need a URL that does not execute <code>index.php</code>.</p>
+    </div>
+</body>
+</html>

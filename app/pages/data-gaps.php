@@ -44,19 +44,6 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
     <h2 id="dg-heading">Data gaps</h2>
     <p class="section-lead">Readiness gaps that still block event-study analysis. This page summarizes missing price coverage, incomplete windows, ticker-lineage issues, benchmark coverage concerns, and expected empty analysis-output tables.</p>
 
-    <nav class="market-md-related" aria-label="Related pages">
-        <span class="compact-note">Related:</span>
-        <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=market-data">Market data</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=pipeline">Pipeline</a>
-    </nav>
-
     <nav class="data-gaps-jump" aria-label="On this page">
         <span class="data-gaps-jump__label">On this page:</span>
         <a class="data-gaps-jump__link" href="#dg-glance">At a glance</a>
@@ -137,7 +124,7 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
 
     <section id="dg-next" class="data-gaps-next panel-nested panel-phase--inset" aria-labelledby="dg-next-label">
         <h3 id="dg-next-label" class="subsection-heading subsection-heading-tight">What to do next</h3>
-        <p class="compact-note">Derived from the same readiness logic as Market Data (next action + coverage checklist). Not a substitute for your import runbook.</p>
+        <p class="compact-note">Derived from the same readiness logic as Market Data Summary (next action + short checklist). Not a substitute for your import runbook.</p>
         <?php if ($nextSteps !== []) { ?>
             <ol class="data-gaps-next__list">
                 <?php foreach ($nextSteps as $step) { ?>
@@ -145,7 +132,7 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
                 <?php } ?>
             </ol>
         <?php } elseif ($dg['telemetry_ok']) { ?>
-            <p class="data-gaps-next__empty compact-note">No scripted checklist lines right now. Use <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a> for the prioritized queue or <a class="footer-top-link" href="index.php?page=market-data">Market Data</a> for the full readiness snapshot.</p>
+            <p class="data-gaps-next__empty compact-note">No scripted checklist lines right now. Use <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a> for the prioritized queue or <a class="footer-top-link" href="index.php?page=market-data">Market Data Summary</a> for the short landing view.</p>
         <?php } else { ?>
             <p class="data-gaps-next__empty compact-note">Connect the database to sync this list with live readiness telemetry.</p>
         <?php } ?>
@@ -187,10 +174,10 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
     </section>
 
     <section id="dg-price" class="data-gaps-section panel-nested panel-phase--inset" aria-labelledby="dg-price-label">
-        <h3 id="dg-price-label" class="subsection-heading">Price coverage gaps</h3>
-        <p class="compact-note">Summary from <code class="inline-code">vw_market_data_import_plan</code> and <code class="inline-code">security_daily_prices</code> aggregates — not a full audit. Detail: <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>, <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a> (readiness), <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a> (tables).</p>
+        <h3 id="dg-price-label" class="subsection-heading">Coverage gaps by ticker</h3>
+        <p class="compact-note">Summary from <code class="inline-code">vw_market_data_import_plan</code> and <code class="inline-code">security_daily_prices</code> aggregates — not a full audit. Detail: <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a>, <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a> (readiness), <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a> (tables).</p>
         <div class="table-scroll">
-            <table class="data-table data-gaps-summary-table">
+            <table class="data-table data-gaps-summary-table data-table--labeled-mobile">
                 <thead>
                     <tr>
                         <th scope="col">Metric</th>
@@ -199,32 +186,32 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
                 </thead>
                 <tbody>
                     <tr class="<?= (int) $ps['not_started'] > 0 ? 'data-table__highlight' : '' ?>">
-                        <td>Planned securities (import plan)</td>
-                        <td class="numeric"><?= (int) $ps['planned'] ?></td>
+                        <td data-label="Metric">Planned securities (import plan)</td>
+                        <td class="numeric" data-label="Count"><?= (int) $ps['planned'] ?></td>
                     </tr>
                     <tr>
-                        <td>Securities with at least one price row</td>
-                        <td class="numeric"><?= (int) $ps['with_prices'] ?></td>
+                        <td data-label="Metric">Securities with at least one price row</td>
+                        <td class="numeric" data-label="Count"><?= (int) $ps['with_prices'] ?></td>
                     </tr>
                     <tr class="<?= (int) $ps['not_started'] > 0 ? 'data-table__highlight' : '' ?>">
-                        <td>Securities still not started (no price rows)</td>
-                        <td class="numeric"><?= (int) $ps['not_started'] ?></td>
+                        <td data-label="Metric">Securities still not started (no price rows)</td>
+                        <td class="numeric" data-label="Count"><?= (int) $ps['not_started'] ?></td>
                     </tr>
                     <tr class="<?= (int) $ps['event_linked_no_prices'] > 0 ? 'data-table__highlight' : '' ?>">
-                        <td>Event-linked with no price rows</td>
-                        <td class="numeric"><?= (int) $ps['event_linked_no_prices'] ?></td>
+                        <td data-label="Metric">Event-linked with no price rows</td>
+                        <td class="numeric" data-label="Count"><?= (int) $ps['event_linked_no_prices'] ?></td>
                     </tr>
                     <tr>
-                        <td>Event-linked with <code class="inline-code">not_started</code> status (role bucket)</td>
-                        <td class="numeric"><?= (int) $ps['event_linked_not_started_role'] ?></td>
+                        <td data-label="Metric">Event-linked with <code class="inline-code">not_started</code> status (role bucket)</td>
+                        <td class="numeric" data-label="Count"><?= (int) $ps['event_linked_not_started_role'] ?></td>
                     </tr>
                     <tr class="<?= (int) $ps['window_incomplete'] > 0 ? 'data-table__highlight' : '' ?>">
-                        <td>Loaded but incomplete vs suggested window (triage window-gap bucket)</td>
-                        <td class="numeric"><?= (int) $ps['window_incomplete'] ?></td>
+                        <td data-label="Metric">Loaded but incomplete vs suggested window (triage window-gap bucket)</td>
+                        <td class="numeric" data-label="Count"><?= (int) $ps['window_incomplete'] ?></td>
                     </tr>
                     <tr>
-                        <td>Plan rows covering suggested window (±<?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?>d slack)</td>
-                        <td class="numeric"><?= (int) $ps['covers_complete'] ?></td>
+                        <td data-label="Metric">Plan rows covering suggested window (±<?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?>d slack)</td>
+                        <td class="numeric" data-label="Count"><?= (int) $ps['covers_complete'] ?></td>
                     </tr>
                 </tbody>
             </table>
@@ -248,7 +235,7 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
         $meta = $dg['lineage']['meta_row'];
         if (is_array($fb) || is_array($meta)) { ?>
             <div class="table-scroll">
-                <table class="data-table data-gaps-mini-table">
+                <table class="data-table data-gaps-mini-table data-table--labeled-mobile">
                     <thead>
                         <tr>
                             <th scope="col">Ticker</th>
@@ -259,16 +246,16 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
                     <tbody>
                         <?php if (is_array($fb)) { ?>
                             <tr>
-                                <td><code class="inline-code">FB</code></td>
-                                <td class="numeric"><?= (int) ($fb['price_rows'] ?? 0) ?></td>
-                                <td><code class="inline-code"><?= komodo_e((string) ($fb['coverage_status'] ?? '')) ?></code></td>
+                                <td data-label="Ticker"><code class="inline-code">FB</code></td>
+                                <td class="numeric" data-label="Price rows"><?= (int) ($fb['price_rows'] ?? 0) ?></td>
+                                <td data-label="Coverage status"><code class="inline-code"><?= komodo_e((string) ($fb['coverage_status'] ?? '')) ?></code></td>
                             </tr>
                         <?php } ?>
                         <?php if (is_array($meta)) { ?>
                             <tr>
-                                <td><code class="inline-code">META</code></td>
-                                <td class="numeric"><?= (int) ($meta['price_rows'] ?? 0) ?></td>
-                                <td><code class="inline-code"><?= komodo_e((string) ($meta['coverage_status'] ?? '')) ?></code></td>
+                                <td data-label="Ticker"><code class="inline-code">META</code></td>
+                                <td class="numeric" data-label="Price rows"><?= (int) ($meta['price_rows'] ?? 0) ?></td>
+                                <td data-label="Coverage status"><code class="inline-code"><?= komodo_e((string) ($meta['coverage_status'] ?? '')) ?></code></td>
                             </tr>
                         <?php } ?>
                     </tbody>
@@ -281,7 +268,7 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
         <h3 id="dg-benchmark-label" class="subsection-heading">Benchmark / market data quality</h3>
         <p class="compact-note"><?= komodo_e($dg['benchmark']['dek']) ?></p>
         <p class="compact-note"><strong>Live snapshot:</strong> <?= komodo_e($dg['benchmark']['index_headline']) ?></p>
-        <p class="compact-note"><a class="footer-top-link" href="index.php?page=market-data">Market Data</a> · <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a> · <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a></p>
+        <p class="compact-note"><a class="footer-top-link" href="index.php?page=market-data">Market Data Summary</a> · <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a> · <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a></p>
     </section>
 
     <section class="data-gaps-section panel-nested panel-phase--inset" aria-labelledby="dg-es-label">
@@ -302,7 +289,7 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
         <summary>Technical zero-row checks (dashboard whitelist)</summary>
         <p class="compact-note">Lower-priority table counts. Expand only when you are reconciling against the dashboard metrics table.</p>
         <div class="table-scroll">
-            <table class="data-table">
+            <table class="data-table data-table--labeled-mobile">
                 <thead>
                     <tr>
                         <th scope="col">Table</th>
@@ -313,9 +300,9 @@ $progressWidth = $progressPct !== null ? max(0, min(100, $progressPct)) : 0;
                 <tbody>
                     <?php foreach ($dg['technical'] as $row) { ?>
                         <tr>
-                            <td><code class="inline-code"><?= komodo_e($row['area']) ?></code></td>
-                            <td><?= komodo_e($row['detail']) ?></td>
-                            <td><span class="severity-pill <?= komodo_e($severityClass((string) $row['severity'])) ?>"><?= komodo_e($row['severity_label']) ?></span></td>
+                            <td data-label="Table"><code class="inline-code"><?= komodo_e($row['area']) ?></code></td>
+                            <td data-label="Detail"><?= komodo_e($row['detail']) ?></td>
+                            <td data-label="Severity"><span class="severity-pill <?= komodo_e($severityClass((string) $row['severity'])) ?>"><?= komodo_e($row['severity_label']) ?></span></td>
                         </tr>
                     <?php } ?>
                 </tbody>

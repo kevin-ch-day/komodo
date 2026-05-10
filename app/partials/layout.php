@@ -18,7 +18,7 @@ $pageDesc = 'Komodo v'
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="<?= komodo_e($pageDesc) ?>">
-    <meta name="theme-color" content="#0c0f14">
+    <meta name="theme-color" content="#16151b">
     <title><?= komodo_e('Komodo v' . KOMODO_APP_VERSION . ' · ' . $doc_title_short) ?></title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <script>

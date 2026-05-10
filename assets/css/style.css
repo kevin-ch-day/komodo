@@ -14,10 +14,12 @@
 @import url("components-panels.css");
 @import url("components-stat-cards.css");
 @import url("components-tables.css");
+@import url("components-table-experience.css");
 @import url("components-kpi-actions.css");
 @import url("page-market-summary.css");
 @import url("page-market-triage.css");
 @import url("page-market-coverage.css");
 @import url("page-companies.css");
+@import url("page-events.css");
 @import url("page-data-gaps.css");
 @import url("footer.css");

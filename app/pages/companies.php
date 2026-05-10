@@ -88,7 +88,7 @@ $sumSafe = is_array($sum) ? $sum : [];
     <div class="companies-hero" aria-label="Companies listing header">
         <div class="companies-hero__left">
             <h2 id="companies-heading" class="companies-hero__title">Companies</h2>
-            <p class="companies-hero__subtitle">Company and security catalog for the cybersecurity–finance event-study dataset. Price readiness lives on <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>; download work on <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>; full plan QA on <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>.</p>
+            <p class="companies-hero__subtitle">Company and security catalog for the cybersecurity–finance event-study dataset. Price readiness lives on <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a>; CSV and import work on <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a>; full plan QA on <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a>.</p>
             <?php if (!$companies['available']) { ?>
                 <span class="badge badge--primary badge--offline">Offline</span>
             <?php } else { ?>
@@ -111,17 +111,6 @@ $sumSafe = is_array($sum) ? $sum : [];
             <?php } ?>
         </div>
     </div>
-
-    <nav class="market-md-related" aria-label="Related pages">
-        <span class="compact-note">Related:</span>
-        <a class="footer-top-link" href="index.php?page=market-data">Market Data</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>
-    </nav>
 
     <?php if (!$companies['available']) { ?>
         <section class="panel-nested panel-phase--inset" aria-label="Companies offline state">
@@ -169,9 +158,9 @@ $sumSafe = is_array($sum) ? $sum : [];
                     echo komodo_e(implode('; ', $parts));
                 } ?></li>
             </ul>
-            <p class="compact-note"><strong>FB / META (lineage, not a missing-price issue):</strong> Event-linked <code class="inline-code">FB</code> can be window-complete; vendors may label historical Facebook files <code class="inline-code">META</code> — map pre–June 2022 rows to the <code class="inline-code">FB</code> security record when events tie to <code class="inline-code">FB</code>. Policy: <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a> · <a class="footer-top-link" href="index.php?page=price-audit#lineage-heading">Price audit (lineage)</a>.</p>
+            <p class="compact-note"><strong>FB / META (lineage, not a missing-price issue):</strong> Event-linked <code class="inline-code">FB</code> can be window-complete; vendors may label historical Facebook files <code class="inline-code">META</code> — map pre–June 2022 rows to the <code class="inline-code">FB</code> security record when events tie to <code class="inline-code">FB</code>. Policy: <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a> · <a class="footer-top-link" href="index.php?page=price-audit#lineage-heading">Price Audit (lineage)</a>.</p>
             <p class="compact-note"><strong><?= komodo_e((string) ($sumSafe['companies_with_multiple_events'] ?? 0)) ?></strong> companies have repeated cyber events (see catalog for which).</p>
-            <p class="compact-note">Next steps for prices: <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a> · Readiness: <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a> · Raw plan / notes: <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>.</p>
+            <p class="compact-note">Next steps for prices: <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a> · Readiness: <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a> · Raw plan / notes: <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a>.</p>
         </aside>
 
         <details class="market-md-collapsible companies-tech-sources">
@@ -239,7 +228,7 @@ $sumSafe = is_array($sum) ? $sum : [];
         </div>
 
         <h3 class="subsection-heading" id="companies-table">Company / security table</h3>
-        <p class="compact-note">Ticker-grain catalog (a company may appear more than once). Coverage badges mirror the import plan; <code class="inline-code">import_notes</code> repeats plan-level callouts here so you do not need the audit table for a quick scan. For gaps and downloads use <a class="footer-top-link" href="index.php?page=price-import-queue">triage</a>. Hover a company name for internal ids.</p>
+        <p class="compact-note">Ticker-grain catalog (a company may appear more than once). Coverage uses the short <strong>Span OK</strong> label when first/last loaded bars match the plan window (± slack) — trading-day density is a separate check on <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a>. <strong>Flags</strong> summarize plan cues; full <code class="inline-code">import_notes</code> text is on hover and in audit tables. For CSV work use <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a>. Hover a company name for internal ids.</p>
         <?php
         /** @var list<array<string, mixed>> $allRows */
         $allRows = (array) ($companies['rows'] ?? []);
@@ -276,7 +265,7 @@ $sumSafe = is_array($sum) ? $sum : [];
             </div>
         <?php } ?>
         <div class="table-scroll">
-            <table class="data-table data-table--sticky data-table--dense data-table--sticky-left" aria-labelledby="companies-table">
+            <table class="data-table data-table--sticky data-table--dense data-table--sticky-left data-table--labeled-mobile" aria-labelledby="companies-table">
                 <thead>
                     <tr>
                         <th scope="col">Company / ticker</th>
@@ -284,7 +273,7 @@ $sumSafe = is_array($sum) ? $sum : [];
                         <th scope="col">Role</th>
                         <th scope="col" class="num">Events</th>
                         <th scope="col">Price (plan)</th>
-                        <th scope="col">Notes</th>
+                        <th scope="col">Flags</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -294,11 +283,16 @@ $sumSafe = is_array($sum) ? $sum : [];
                         $roleDesc = $roleKey !== '' ? komodo_describe($roleKey, 'role') : null;
 
                         $covKey = (string) ($r['coverage_status'] ?? 'unavailable_or_error');
-                        $covLabel = komodo_label_safe($covKey, 'coverage_status');
+                        $covLabel = komodo_coverage_catalog_label($covKey);
                         $covDesc = komodo_describe($covKey, 'coverage_status');
                         $covClass = komodo_coverage_badge_css($covKey);
 
-                        [$noteDisp, $noteFull, $noteHasTitle] = komodo_note_preview(isset($r['import_notes']) ? (string) $r['import_notes'] : '', 96);
+                        $rawImpNote = isset($r['import_notes']) ? trim((string) $r['import_notes']) : '';
+                        $notePlainFull = $rawImpNote !== '' ? trim(preg_replace('/\s+/', ' ', strip_tags($rawImpNote))) : '';
+                        $catalogFlags = komodo_company_security_catalog_flags($r);
+                        $flagsTitle = $notePlainFull !== ''
+                            ? ' title="' . komodo_e($notePlainFull) . '"'
+                            : '';
 
                         $secEv = (int) ($r['security_event_count'] ?? 0);
                         $planEv = (int) ($r['linked_event_count'] ?? 0);
@@ -314,7 +308,7 @@ $sumSafe = is_array($sum) ? $sum : [];
                         $idsTitle = 'company_id=' . $companyId . '; security_id=' . $securityId;
                         ?>
                         <tr>
-                            <td>
+                            <td data-label="Company / ticker">
                                 <div class="label-stack">
                                     <span class="label-primary">
                                         <a class="companies-link" href="index.php?page=company&company_id=<?= komodo_e($companyId) ?>" title="<?= komodo_e($idsTitle) ?>"><?= komodo_e($companyName) ?></a>
@@ -327,24 +321,28 @@ $sumSafe = is_array($sum) ? $sum : [];
                                     </span>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Sector / industry">
                                 <div class="label-stack">
                                     <span class="label-primary"><?= komodo_e($sector) ?></span>
                                     <span class="label-secondary"><?= komodo_e($industry) ?></span>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Role">
                                 <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc . ($roleKey !== '' ? ' (' . $roleKey . ')' : '')) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
                             </td>
-                            <td class="num"><?= komodo_e((string) $events) ?></td>
-                            <td>
+                            <td class="num" data-label="Events"><?= komodo_e((string) $events) ?></td>
+                            <td data-label="Price (plan)">
                                 <span class="coverage-badge <?= komodo_e($covClass) ?>"<?= $covDesc ? ' title="' . komodo_e($covDesc) . '"' : '' ?>><?= komodo_e($covLabel) ?></span>
                             </td>
-                            <td class="compact-note"><?php if ($noteDisp !== '') { ?>
-                                <span<?= $noteHasTitle ? ' title="' . $noteFull . '"' : '' ?>><?= $noteDisp ?></span>
-                            <?php } else {
-                                echo '—';
-                            } ?></td>
+                            <td class="companies-flags-cell compact-note" data-label="Flags"<?= $flagsTitle ?>><?php if ($catalogFlags === []) { ?>
+                                —
+                            <?php } else { ?>
+                                <ul class="companies-flag-list" role="list">
+                                    <?php foreach ($catalogFlags as $fl) { ?>
+                                        <li><span class="company-flag-chip"><?= komodo_e($fl['label']) ?></span></li>
+                                    <?php } ?>
+                                </ul>
+                            <?php } ?></td>
                         </tr>
                     <?php } ?>
                 </tbody>

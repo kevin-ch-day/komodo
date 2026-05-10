@@ -1,0 +1,52 @@
+/* page-events — event catalog + readiness snapshot */
+.events-readiness-panel {
+    margin-bottom: 1.1rem;
+}
+
+.events-readiness-conclusion {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.3rem;
+    max-width: 38rem;
+}
+
+.events-readiness-conclusion li {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+.events-readiness-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14.5rem, 1fr));
+    gap: 0.85rem;
+    margin: 0.65rem 0 0.35rem;
+}
+
+.events-readiness-grid .stat-card__title {
+    font-size: 0.8rem;
+}
+
+.events-readiness-grid .stat-card__value {
+    font-size: 1.35rem;
+}
+
+.events-readiness-examples {
+    list-style: none;
+    margin: 0.45rem 0 0;
+    padding: 0;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: var(--text-dim);
+}
+
+.events-readiness-examples li {
+    margin: 0 0 0.2rem;
+}
+
+.events-readiness-more-link {
+    margin: 0.15rem 0 1rem;
+}

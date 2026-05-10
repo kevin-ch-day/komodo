@@ -81,6 +81,47 @@ function komodo_calendar_day_diff_ymd(string $fromYmd, string $toYmd): int
 }
 
 /**
+ * Add whole calendar days to a Y-m-d date (for triage “next calendar day” ranges).
+ */
+function komodo_add_calendar_days_ymd(string $ymd, int $days): ?string
+{
+    $dt = DateTimeImmutable::createFromFormat('Y-m-d', $ymd);
+    if ($dt === false) {
+        return null;
+    }
+
+    return $dt->modify(($days >= 0 ? '+' : '') . $days . ' days')->format('Y-m-d');
+}
+
+/**
+ * Short US-style date for triage copy, e.g. "Dec 31, 2020".
+ */
+function komodo_format_ymd_us_for_triage(mixed $dateish): string
+{
+    $s = komodo_normalize_date_string($dateish);
+    if ($s === null) {
+        return '';
+    }
+    $dt = DateTimeImmutable::createFromFormat('Y-m-d', $s);
+
+    return $dt === false ? '' : $dt->format('M j, Y');
+}
+
+/**
+ * Inclusive calendar range label "Jan 1, 2021 → Jul 22, 2021" for operator CSV pulls.
+ */
+function komodo_format_ymd_range_arrow_triage(string $startYmd, string $endYmd): string
+{
+    $a = komodo_format_ymd_us_for_triage($startYmd);
+    $b = komodo_format_ymd_us_for_triage($endYmd);
+    if ($a === '' || $b === '') {
+        return '—';
+    }
+
+    return "{$a} → {$b}";
+}
+
+/**
  * Full market-data payload for Market Data page.
  *
  * @param array<string, mixed> $baseContext
@@ -1228,7 +1269,7 @@ function komodo_readiness_security_role(?array $securitySummary, string $roleKey
             'state' => 'ready',
             'label' => 'Coverage ready',
             'badge_class' => 'coverage-badge--ok',
-            'dek' => sprintf('All %d series fully cover the suggested import window.', $total),
+            'dek' => sprintf('All %d series at Span OK for the suggested import window (± slack; density separate).', $total),
             'technical' => $technical,
             'total' => $total,
             'covers' => $covers,
@@ -1242,7 +1283,7 @@ function komodo_readiness_security_role(?array $securitySummary, string $roleKey
         'state' => 'partial',
         'label' => 'Partial coverage',
         'badge_class' => 'coverage-badge--partial',
-        'dek' => sprintf('%d of %d fully cover the suggested window; resolve gaps before event-study QA.', $covers, $total),
+        'dek' => sprintf('%d of %d at Span OK for the suggested window; resolve gaps before event-study QA.', $covers, $total),
         'technical' => $technical,
         'total' => $total,
         'covers' => $covers,
@@ -1391,10 +1432,8 @@ function komodo_market_data_insights(?array $securitySummary, ?array $indexSumma
     }
 
     $checklist = [
-        'Outside Komodo: load index_daily_prices for every market_indexes row you need as a benchmark.',
-        'Outside Komodo: load security_daily_prices starting with event_linked_security rows.',
-        'Compare first/last bar dates against suggested_import_* on Price import triage and Price audit (±7 calendar-day slack at each end); Price coverage is the short readiness summary.',
-        'Revisit Data gaps and import notes after each external load batch.',
+        'Outside Komodo: load index_daily_prices for benchmarks, then security_daily_prices (event-linked first).',
+        'Compare spans on Price Worklist and full tables on Price Audit (±7 calendar-day slack at each end); Coverage Summary for readiness.',
     ];
 
     return [
@@ -1452,8 +1491,14 @@ SELECT
   plan.import_notes,
   COALESCE(px.price_rows, 0) AS price_rows,
   px.first_price_date,
-  px.last_price_date
+  px.last_price_date,
+  sec.company_id,
+  COALESCE(NULLIF(TRIM(c.display_name), ''), NULLIF(TRIM(c.legal_name), ''), NULLIF(TRIM(plan.display_name), ''), NULLIF(TRIM(plan.security_name), '')) AS worklist_company_name
 FROM vw_market_data_import_plan plan
+LEFT JOIN securities sec
+  ON plan.security_id = sec.security_id
+LEFT JOIN companies c
+  ON sec.company_id = c.company_id
 LEFT JOIN (
   SELECT
     security_id,
@@ -1579,6 +1624,73 @@ SQL;
 }
 
 /**
+ * Aligned trading-day density for a subset of securities (e.g. one company drilldown).
+ *
+ * @param list<int> $securityIds
+ *
+ * @return array{ok: bool, rows: list<array<string, mixed>>, error: ?string}
+ */
+function komodo_fetch_aligned_daily_density_for_security_ids(PDO $pdo, array $securityIds): array
+{
+    $securityIds = array_values(array_unique(array_filter(array_map(static function ($v): int {
+        return (int) $v;
+    }, $securityIds), static fn (int $id): bool => $id > 0)));
+
+    if ($securityIds === []) {
+        return ['ok' => true, 'rows' => [], 'error' => null];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($securityIds), '?'));
+    $sql = <<<SQL
+SELECT
+  p.security_id,
+  p.ticker_symbol,
+  p.display_name,
+  p.price_import_role,
+  p.linked_event_count,
+  p.suggested_import_start_date,
+  p.suggested_import_end_date,
+  MIN(sdp.trade_date) AS first_aligned_trade_date,
+  MAX(sdp.trade_date) AS last_aligned_trade_date,
+  COUNT(DISTINCT td.calendar_date) AS expected_trading_days,
+  COUNT(DISTINCT sdp.trade_date) AS loaded_aligned_days,
+  ROUND(
+    COUNT(DISTINCT sdp.trade_date) / NULLIF(COUNT(DISTINCT td.calendar_date), 0),
+    4
+  ) AS aligned_density_ratio
+FROM vw_market_data_import_plan p
+LEFT JOIN vw_us_trading_days td
+  ON td.calendar_date BETWEEN DATE(p.suggested_import_start_date) AND DATE(p.suggested_import_end_date)
+LEFT JOIN security_daily_prices sdp
+  ON sdp.security_id = p.security_id
+ AND sdp.trade_date = td.calendar_date
+WHERE p.security_id IN ($placeholders)
+GROUP BY
+  p.security_id,
+  p.ticker_symbol,
+  p.display_name,
+  p.price_import_role,
+  p.linked_event_count,
+  p.suggested_import_start_date,
+  p.suggested_import_end_date
+ORDER BY p.ticker_symbol
+SQL;
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        foreach ($securityIds as $i => $id) {
+            $stmt->bindValue($i + 1, $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return ['ok' => true, 'rows' => $rows, 'error' => null];
+    } catch (Throwable) {
+        return ['ok' => false, 'rows' => [], 'error' => 'exception'];
+    }
+}
+
+/**
  * @return array{ok: bool, rows: list<array<string, mixed>>, error: ?string}
  */
 function komodo_fetch_index_price_coverage(PDO $pdo): array
@@ -1680,6 +1792,223 @@ function komodo_security_coverage_status(array $row): string
     }
 
     return 'missing_start_window';
+}
+
+/**
+ * Which sides of the suggested window are short vs loaded span (same slack rule as {@see komodo_security_coverage_status}).
+ *
+ * @return array{miss_start: bool, miss_end: bool, s_start: ?string, s_end: ?string, first: ?string, last: ?string}
+ */
+function komodo_security_window_gap_flags(array $row): array
+{
+    $blank = ['miss_start' => false, 'miss_end' => false, 's_start' => null, 's_end' => null, 'first' => null, 'last' => null];
+    $priceRows = (int) ($row['price_rows'] ?? 0);
+    if ($priceRows <= 0) {
+        return $blank;
+    }
+
+    $start = $row['suggested_import_start_date'] ?? null;
+    $end = $row['suggested_import_end_date'] ?? null;
+    $first = komodo_normalize_date_string($row['first_price_date'] ?? null);
+    $last = komodo_normalize_date_string($row['last_price_date'] ?? null);
+    $sStart = komodo_normalize_date_string($start);
+    $sEnd = komodo_normalize_date_string($end);
+    if ($sStart === null || $sEnd === null || $first === null || $last === null) {
+        return [
+            'miss_start' => false,
+            'miss_end' => false,
+            's_start' => $sStart,
+            's_end' => $sEnd,
+            'first' => $first,
+            'last' => $last,
+        ];
+    }
+
+    $slack = KOMODO_TRIAGE_WINDOW_SLACK_DAYS;
+    $missStart = false;
+    $missEnd = false;
+
+    if (strcmp($first, $sStart) > 0) {
+        if (komodo_calendar_day_diff_ymd($sStart, $first) > $slack) {
+            $missStart = true;
+        }
+    }
+
+    if (strcmp($last, $sEnd) < 0) {
+        if (komodo_calendar_day_diff_ymd($last, $sEnd) > $slack) {
+            $missEnd = true;
+        }
+    }
+
+    return [
+        'miss_start' => $missStart,
+        'miss_end' => $missEnd,
+        's_start' => $sStart,
+        's_end' => $sEnd,
+        'first' => $first,
+        'last' => $last,
+    ];
+}
+
+/**
+ * Action-oriented copy for Price import triage → window-gap worklist (read-only).
+ *
+ * @return array{gap: string, missing: string, next: string, title: string}
+ */
+function komodo_triage_window_worklist_copy(array $row): array
+{
+    $sym = strtoupper(trim((string) ($row['ticker_symbol'] ?? '')));
+    $symDisp = $sym !== '' ? $sym : 'this ticker';
+    $st = (string) ($row['coverage_status'] ?? '');
+    $role = (string) ($row['price_import_role'] ?? '');
+    $note = isset($row['import_notes']) ? trim((string) $row['import_notes']) : '';
+    $isEl = $role === 'event_linked_security';
+
+    if ($st === 'has_prices_window_unknown') {
+        $gap = 'Plan window dates are missing or unreadable — span cannot be checked here.';
+        $missing = '—';
+        $next = 'Repair suggested_import_* dates in the plan (or upstream), then re-check.';
+
+        return ['gap' => $gap, 'missing' => $missing, 'next' => $next, 'title' => "{$gap}\n{$next}"];
+    }
+
+    if ($st === 'partial_unknown_dates') {
+        $gap = 'Prices exist, but first/last bar dates are unknown in telemetry.';
+        $missing = '—';
+        $next = 'Fix aggregates or gaps in security_daily_prices for this security, then refresh.';
+
+        return ['gap' => $gap, 'missing' => $missing, 'next' => $next, 'title' => "{$gap}\n{$next}"];
+    }
+
+    if ($st === 'partial') {
+        $gap = 'Loaded span does not line up with the plan window signal (partial / edge case).';
+        $missing = '—';
+        $next = 'Use the full-plan row on Price Audit to decide the exact CSV window.';
+
+        return ['gap' => $gap, 'missing' => $missing, 'next' => $next, 'title' => "{$gap}\n{$next}"];
+    }
+
+    $flags = komodo_security_window_gap_flags($row);
+    $sStart = $flags['s_start'];
+    $sEnd = $flags['s_end'];
+    $first = $flags['first'];
+    $last = $flags['last'];
+
+    if ($sStart === null || $sEnd === null || $first === null || $last === null) {
+        $gap = 'Window gap is flagged, but plan or price dates were incomplete in this row.';
+        $missing = '—';
+        $next = 'Open Price Audit for raw plan + MIN/MAX trade_date.';
+
+        return ['gap' => $gap, 'missing' => $missing, 'next' => $next, 'title' => $gap];
+    }
+
+    $gapBits = [];
+    $partsMiss = [];
+    $partsNext = [];
+
+    if ($flags['miss_end']) {
+        $afterLast = komodo_add_calendar_days_ymd($last, 1);
+        if ($afterLast !== null && strcmp($afterLast, $sEnd) <= 0) {
+            $partsMiss[] = 'Trailing: ' . komodo_format_ymd_range_arrow_triage($afterLast, $sEnd);
+        } else {
+            $partsMiss[] = 'Trailing: extend through ' . komodo_format_ymd_us_for_triage($sEnd);
+        }
+        $gapBits[] = 'Loaded ends ' . komodo_format_ymd_us_for_triage($last) . '; needs through ' . komodo_format_ymd_us_for_triage($sEnd) . '.';
+        if ($afterLast !== null && strcmp($afterLast, $sEnd) <= 0) {
+            $arrow = komodo_format_ymd_range_arrow_triage($afterLast, $sEnd);
+            if ($isEl) {
+                $partsNext[] = 'Import daily ' . $symDisp . ' ' . $arrow . '.';
+            } else {
+                $partsNext[] = 'Refresh or extend daily ' . $symDisp . ' through ' . komodo_format_ymd_us_for_triage($sEnd) . ' (fill ' . $arrow . ').';
+            }
+        }
+    }
+
+    if ($flags['miss_start']) {
+        $beforeFirst = komodo_add_calendar_days_ymd($first, -1);
+        if ($beforeFirst !== null && strcmp($sStart, $beforeFirst) <= 0) {
+            $partsMiss[] = 'Leading: ' . komodo_format_ymd_range_arrow_triage($sStart, $beforeFirst);
+        } else {
+            $partsMiss[] = 'Leading: back to ' . komodo_format_ymd_us_for_triage($sStart);
+        }
+        $gapBits[] = 'Loaded starts ' . komodo_format_ymd_us_for_triage($first) . '; plan starts ' . komodo_format_ymd_us_for_triage($sStart) . '.';
+        if ($beforeFirst !== null && strcmp($sStart, $beforeFirst) <= 0) {
+            $arrow = komodo_format_ymd_range_arrow_triage($sStart, $beforeFirst);
+            if ($isEl) {
+                $partsNext[] = 'Backfill daily ' . $symDisp . ' ' . $arrow . '.';
+            } else {
+                $nl = strtolower($note);
+                $caveat = (str_contains($nl, 'volatil') || str_contains($nl, 'wildcard'))
+                    ? ' only if you still treat this name as a high-volatility comparison.'
+                    : ' only if the comparison set needs that early history.';
+                $partsNext[] = 'Backfill daily ' . $symDisp . ' ' . $arrow . $caveat;
+            }
+        }
+    }
+
+    if ($gapBits === []) {
+        $gap = 'Window flagged as open, but slack math did not produce a missing range on this pass — verify on Price Audit.';
+        $missing = '—';
+        $next = 'Confirm first/last bars vs suggested_import_* dates.';
+
+        return ['gap' => $gap, 'missing' => $missing, 'next' => $next, 'title' => $gap];
+    }
+
+    $gap = count($gapBits) > 1
+        ? 'Leading and trailing gaps vs the suggested window. ' . implode(' ', $gapBits)
+        : $gapBits[0];
+    $missing = $partsMiss === [] ? '—' : implode(' · ', $partsMiss);
+    $next = $partsNext === [] ? 'Confirm on Price Audit, then extend the CSV window and re-import.' : implode(' ', $partsNext);
+
+    $title = implode("\n", array_filter([
+        $gap,
+        $missing !== '—' ? 'Missing: ' . $missing : '',
+        $next,
+    ]));
+
+    return ['gap' => $gap, 'missing' => $missing, 'next' => $next, 'title' => $title];
+}
+
+/**
+ * Narrative fields for company drilldown (span, imports, lineage) — mirrors worklist window copy when applicable.
+ *
+ * @param array<string, mixed> $row Plan + price aggregates (e.g. vw_market_data_import_plan row shape)
+ *
+ * @return array{problem: string, missing: string, next: string}
+ */
+function komodo_company_security_worklist_explain(array $row): array
+{
+    $st = (string) ($row['coverage_status'] ?? '');
+    if (komodo_triage_is_loaded_window_gap($st)) {
+        $wl = komodo_triage_window_worklist_copy($row);
+
+        return ['problem' => $wl['gap'], 'missing' => $wl['missing'], 'next' => $wl['next']];
+    }
+
+    if ($st === 'not_started') {
+        $sym = strtoupper(trim((string) ($row['ticker_symbol'] ?? '')));
+        $symDisp = $sym !== '' ? $sym : 'this ticker';
+
+        return [
+            'problem' => 'No daily price rows loaded for this security yet.',
+            'missing' => '—',
+            'next' => 'Import daily ' . $symDisp . ' for the plan window (see Price Worklist).',
+        ];
+    }
+
+    if ($st === 'covers_suggested_window') {
+        return [
+            'problem' => 'Loaded first/last bars fall within the plan window (± slack).',
+            'missing' => '—',
+            'next' => 'No span fix needed — if the series looks sparse, check aligned daily density below and Price Audit.',
+        ];
+    }
+
+    return [
+        'problem' => 'Coverage needs review for this row — see span status and Price Audit.',
+        'missing' => '—',
+        'next' => 'Open Price Audit for the full plan row and diagnostics.',
+    ];
 }
 
 /**
@@ -1901,6 +2230,68 @@ function komodo_top_problem_securities(array $securityRows): array
 }
 
 /**
+ * Short blocker lines for the Market Data summary landing page (plain text; escape on output).
+ *
+ * @param array<string, mixed> $marketData Full market_data context slice from {@see komodo_build_market_data_context}.
+ *
+ * @return list<string>
+ */
+function komodo_market_summary_blocker_lines(array $marketData): array
+{
+    $lines = [];
+    $is = $marketData['index_summary'] ?? null;
+    if (is_array($is) && (int) ($is['indexes_with_any_prices'] ?? 0) > 0) {
+        $lines[] = 'Benchmark indexes have rows but need dense daily coverage review.';
+    }
+
+    $top = (array) ($marketData['top_problem_securities'] ?? []);
+    foreach ($top as $row) {
+        $st = (string) ($row['coverage_status'] ?? '');
+        if (!in_array($st, ['missing_end_window', 'missing_start_window'], true)) {
+            continue;
+        }
+        $sym = strtoupper(trim((string) ($row['ticker_symbol'] ?? '')));
+        $copy = komodo_triage_window_worklist_copy($row);
+        $next = trim((string) ($copy['next'] ?? ''));
+        if ($sym !== '' && $next !== '') {
+            $lines[] = $sym . ': ' . $next;
+        } elseif ($sym !== '') {
+            $lines[] = $sym . ' still needs window-aligned daily rows (see Price Worklist).';
+        }
+        break;
+    }
+
+    $spec = (array) ($marketData['triage_next_batch_special_source'] ?? []);
+    $otcLine = null;
+    foreach ($spec as $row) {
+        $sym = strtoupper(trim((string) ($row['ticker_symbol'] ?? '')));
+        if ($sym !== '') {
+            $otcLine = $sym . ' still needs an OTC ADR-capable historical source.';
+            break;
+        }
+    }
+    if ($otcLine === null) {
+        foreach ($top as $row) {
+            $note = isset($row['import_notes']) ? (string) $row['import_notes'] : '';
+            if ($note !== '' && komodo_import_notes_triage_special_source_otc_adr($note)) {
+                $sym = strtoupper(trim((string) ($row['ticker_symbol'] ?? '')));
+                $otcLine = $sym !== ''
+                    ? $sym . ' still needs an OTC ADR-capable historical source.'
+                    : 'One plan row still needs an OTC ADR-capable historical source.';
+                break;
+            }
+        }
+    }
+    if ($otcLine !== null) {
+        $lines[] = $otcLine;
+    }
+
+    $lines[] = 'Do not load weekly files into security_daily_prices — that table is for daily trading-day series.';
+
+    return $lines;
+}
+
+/**
  * Safe table count from dashboard context shape (read-only).
  *
  * @param array<string, array{identifier: string, count: ?int, status: string}> $tableCountsSafe
@@ -2099,7 +2490,7 @@ function komodo_build_data_gaps_view_model(array $marketData, bool $offlineMode,
             'insights_headline' => '',
             'next_steps' => [
                 'Connect MariaDB with app/config/local.php, then reload this page.',
-                'Open Market Data for the coverage snapshot, or Price import triage for the prioritized work list.',
+                'Open Market Data Summary for the landing snapshot, or Price Worklist for the prioritized work list.',
             ],
             'coverage_progress' => ['covers' => 0, 'planned' => 0, 'pct' => null],
             'triage_open_total' => 0,
@@ -2155,7 +2546,7 @@ function komodo_build_data_gaps_view_model(array $marketData, bool $offlineMode,
         'title' => 'Loaded but incomplete windows',
         'count' => $windowIncomplete,
         'count_label' => (string) $windowIncomplete,
-        'dek' => 'Bars exist but first/last trade dates miss the suggested import window beyond ±' . KOMODO_TRIAGE_WINDOW_SLACK_DAYS . ' calendar days (same bucket as Price import triage → window gaps).',
+        'dek' => 'Bars exist but first/last trade dates miss the suggested import window beyond ±' . KOMODO_TRIAGE_WINDOW_SLACK_DAYS . ' calendar days (same bucket as Price Worklist → window gaps).',
         'severity' => $windowIncomplete > 0 ? 'blocking_now' : 'informational',
         'severity_label' => $windowIncomplete > 0 ? 'Blocking now' : 'Informational',
         'href' => 'index.php?page=price-import-queue',
@@ -2193,7 +2584,7 @@ function komodo_build_data_gaps_view_model(array $marketData, bool $offlineMode,
         'dek' => 'event_study_runs / event_study_results are empty — expected until an analysis phase runs outside this portal.',
         'severity' => 'expected_later',
         'severity_label' => 'Expected later',
-        'href' => 'index.php?page=pipeline',
+        'href' => 'index.php?page=data-gaps#dg-es-label',
     ];
 
     komodo_data_gaps_finalize_cards($blockingCards);

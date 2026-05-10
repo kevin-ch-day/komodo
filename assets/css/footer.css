@@ -36,6 +36,7 @@
 
     .shell-main {
         background: transparent;
+        margin-left: 0 !important;
     }
 
     .panel,

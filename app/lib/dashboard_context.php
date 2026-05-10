@@ -26,7 +26,7 @@ const KOMODO_OFFLINE_TABLE_REFERENCE = [
     'event_study_results' => 0,
 ];
 
-const KOMODO_APP_VERSION = '0.0.2';
+const KOMODO_APP_VERSION = '0.0.3';
 
 /**
  * Offline analytical view counts (documentation snapshots).
@@ -469,63 +469,6 @@ function komodo_phase_status_lines(string $connState, string $phaseId, array $ta
 }
 
 /**
- * @param array<string, array{identifier: string, count: ?int, status: string}> $tables
- * @return list<string>
- */
-function komodo_pipeline_narrative(string $connState, array $tables, bool $offlineMode): array
-{
-    if ($offlineMode || $connState !== 'connected') {
-        return [
-            'MariaDB connection is not live — treat pipeline wording as orientation, not telemetry.',
-            'After local.php validates, this section summarizes external data loads, source provenance, and analysis gates from live counts.',
-        ];
-    }
-
-    $lines = [];
-
-    $events = komodo_int_if_ok($tables, 'cyber_events');
-    $lines[] = $events !== null && $events > 0
-        ? 'Cyber event identifiers and linkage tables carry rows — data changes stay outside this read-only research portal.'
-        : 'Cyber event metadata still thin — stabilize core events before expanding market or QA overlays.';
-
-    $mcal = komodo_int_if_ok($tables, 'market_calendar');
-    $lines[] = $mcal !== null && $mcal > 0
-        ? 'Market calendar is populated — anchors expected US trading spans for downstream price QA.'
-        : 'Market calendar is missing or unreadable — fix DDL or GRANT paths before interpreting market-data plan views.';
-
-    $secPx = komodo_int_if_ok($tables, 'security_daily_prices');
-    $idxPx = komodo_int_if_ok($tables, 'index_daily_prices');
-    if ($secPx !== null && $idxPx !== null && $secPx === 0 && $idxPx === 0) {
-        $lines[] = 'Daily price loads have not landed — securities and benchmarks still show zero rows.';
-        $lines[] = 'External benchmark and security price loads are the near-term bottleneck before event-window QA at scale.';
-    } elseif (($secPx !== null && $secPx === 0) xor ($idxPx !== null && $idxPx === 0)) {
-        $lines[] = 'Security price coverage is asymmetric — reconcile issuer vs benchmark index series after external loads.';
-    } elseif ($secPx !== null && $idxPx !== null && $secPx > 0 && $idxPx > 0) {
-        $lines[] = 'Both issuer and benchmark price tables contain rows — run coverage QA against import-plan targets.';
-    }
-
-    $src = komodo_int_if_ok($tables, 'cyber_event_sources');
-    $lines[] = match (true) {
-        $src === null => 'Provenance telemetry unavailable — rerun counts after fixing SELECT access.',
-        $src === 0 => 'cyber_event_sources is empty — add provenance rows outside Komodo before publishing research results.',
-        default => 'Source provenance: rows exist — continue expanding cyber_event_sources with each external ingestion batch.',
-    };
-
-    $runs = komodo_int_if_ok($tables, 'event_study_runs');
-    $results = komodo_int_if_ok($tables, 'event_study_results');
-    if ($runs === null || $results === null) {
-        $lines[] = 'Event study outputs unreadable — clear failing objects before layering ML overlays.';
-    } elseif ($runs === 0 && $results === 0) {
-        $lines[] = 'Event study analysis not started — event_study_runs and event_study_results remain empty.';
-    }
-
-    $lines[] = 'Machine learning / broader data mining is not active in this Komodo shell — telemetry only for v'
-        . KOMODO_APP_VERSION . '.';
-
-    return array_values(array_unique($lines));
-}
-
-/**
  * @param array<string, array{identifier: string, count: ?int, status: string}> $live
  * @return array{class: string, text: string}
  */
@@ -621,7 +564,6 @@ function komodo_build_dashboard_context(): array
     $visualMode = komodo_page_visual_mode($connState, $partialMetrics);
     $primaryStatusBadge = komodo_primary_status_badge($visualMode);
     $phaseStatusLines = komodo_phase_status_lines($connState, $workflow['id'], $tableCountsSafe, $offlineMode);
-    $pipelineNarrative = komodo_pipeline_narrative($connState, $tableCountsSafe, $offlineMode);
 
     $tableOrder = [
         'companies', 'securities', 'cyber_events', 'cyber_event_dates', 'cyber_event_features',
@@ -691,7 +633,6 @@ function komodo_build_dashboard_context(): array
         'visual_mode' => $visualMode,
         'primary_status_badge' => $primaryStatusBadge,
         'phase_status_lines' => $phaseStatusLines,
-        'pipeline_narrative' => $pipelineNarrative,
         'table_order' => $tableOrder,
         'market_kpis' => $marketKpis,
         'event_readiness_kpis' => $eventReadinessKpis,

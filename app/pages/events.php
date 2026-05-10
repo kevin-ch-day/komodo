@@ -15,6 +15,7 @@ $ev = $ctx['events'] ?? [
         'total_events' => 0,
         'events_with_disclosure' => 0,
         'events_with_first_trading_day' => 0,
+        'events_with_security_links' => 0,
         'events_with_sources' => 0,
         'events_missing_sources' => 0,
         'events_needing_impact_review' => 0,
@@ -87,13 +88,15 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
     ];
 };
 
-$queueLimit = 12;
-$queueSpecs = [
-    'missing_source_provenance' => ['title' => 'Missing source provenance', 'countKey' => 'events_missing_sources', 'note' => 'Expected while cyber_event_sources is empty — populate provenance to unlock downstream readiness.'],
-    'needs_impact_quantification' => ['title' => 'Needs impact review', 'countKey' => 'events_needing_impact_review', 'note' => null],
-    'overlap_or_cluster_review' => ['title' => 'Overlap / cluster review', 'countKey' => 'events_with_overlap_or_cluster_flags', 'note' => null],
-    'research_ready_metadata' => ['title' => 'Research-ready metadata candidates', 'countKey' => 'research_ready_metadata', 'note' => 'Requires source rows and clean flags — see primary readiness column.'],
-];
+$eventsExampleLine = static function (array $it): string {
+    $id = (int) ($it['cyber_event_id'] ?? 0);
+    $name = trim((string) ($it['event_name'] ?? ''));
+    if ($name !== '' && strlen($name) > 44) {
+        $name = substr($name, 0, 41) . '…';
+    }
+
+    return $name !== '' ? '#' . $id . ' · ' . $name : '#' . $id;
+};
 
 $types = (array) ($dist['event_type'] ?? []);
 $sevs = (array) ($dist['severity'] ?? []);
@@ -120,8 +123,7 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
     <div class="companies-hero" aria-label="Events listing header">
         <div class="companies-hero__left">
             <h2 id="events-heading" class="companies-hero__title">Events</h2>
-            <p class="companies-hero__subtitle">Read-only cyber events: linkage, severity and confidence, disclosure and first-trading-day dates, source provenance gaps, and research readiness signals (overlap/cluster review on Research quality).</p>
-            <p class="compact-note events-hero__date-note">Event dates use <code class="inline-code inline-code--subtle">cyber_event_dates.date_type</code> values <strong>disclosure</strong> and <strong>first_trading_day</strong> (not guessed column names).</p>
+            <p class="companies-hero__subtitle">Cyber event catalog and readiness snapshot (read-only). Use the table for per-event detail; use <a class="footer-top-link" href="index.php?page=research-quality#rq-heading">Research quality</a> and <a class="footer-top-link" href="index.php?page=data-gaps#dg-cards">Data gaps</a> for full review queues.</p>
             <?php if (!$ev['available']) { ?>
                 <span class="badge badge--primary badge--offline">Offline</span>
             <?php } else { ?>
@@ -134,8 +136,6 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
         </div>
         <div class="companies-hero__right" aria-label="Events data signal">
             <?php if ($ev['available'] && $sum) { ?>
-                <p class="companies-hero__signal"><strong><?= komodo_e((string) ($sum['total_events'] ?? '—')) ?></strong> cyber events in scope.</p>
-                <p class="companies-hero__signal"><strong><?= komodo_e((string) ($sum['events_missing_sources'] ?? '—')) ?></strong> missing source provenance rows.</p>
                 <p class="companies-hero__signal"><?= komodo_e((string) $ev['message']) ?></p>
             <?php } else { ?>
                 <p class="companies-hero__signal"><?= komodo_e((string) $ev['message']) ?></p>
@@ -157,15 +157,31 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
             </ul>
         <?php } ?>
 
-        <div class="companies-kpi-strip" aria-label="Events KPI strip">
-            <div class="companies-kpi"><span class="companies-kpi__label">Cyber events</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['total_events'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">Disclosure dates</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['events_with_disclosure'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">First trading day</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['events_with_first_trading_day'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">Missing sources</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['events_missing_sources'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">Impact review</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['events_needing_impact_review'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">Overlap / cluster</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['events_with_overlap_or_cluster_flags'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">Event–security links</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['cyber_event_securities_rows'] ?? '—')) : '—' ?></span></div>
-        </div>
+        <?php
+        $tEv = $sum ? (int) ($sum['total_events'] ?? 0) : 0;
+        $tDisc = $sum ? (int) ($sum['events_with_disclosure'] ?? 0) : 0;
+        $tFtd = $sum ? (int) ($sum['events_with_first_trading_day'] ?? 0) : 0;
+        $tSec = $sum ? (int) ($sum['events_with_security_links'] ?? 0) : 0;
+        $tMissSrc = $sum ? (int) ($sum['events_missing_sources'] ?? 0) : 0;
+        $tImpact = $sum ? (int) ($sum['events_needing_impact_review'] ?? 0) : 0;
+        $tOverlap = $sum ? (int) ($sum['events_with_overlap_or_cluster_flags'] ?? 0) : 0;
+        $exImpact = array_slice((array) ($att['needs_impact_quantification'] ?? []), 0, 3);
+        $exOverlap = array_slice((array) ($att['overlap_or_cluster_review'] ?? []), 0, 3);
+        $exReady = array_slice((array) ($att['research_ready_metadata'] ?? []), 0, 3);
+        $tReady = $sum ? (int) ($sum['research_ready_metadata'] ?? 0) : 0;
+        ?>
+        <section class="panel-nested panel-phase--inset events-readiness-panel" aria-labelledby="events-snapshot-heading">
+            <h3 id="events-snapshot-heading" class="subsection-heading subsection-heading-tight">Dataset snapshot</h3>
+            <ul class="events-readiness-conclusion" role="list">
+                <li><strong><?= komodo_e((string) $tEv) ?></strong> cyber events in scope</li>
+                <li><strong><?= komodo_e((string) $tDisc) ?></strong> have disclosure dates</li>
+                <li><strong><?= komodo_e((string) $tFtd) ?></strong> have first trading-day dates</li>
+                <li><strong><?= komodo_e((string) $tSec) ?></strong> have event-security links</li>
+                <li><strong><?= komodo_e((string) $tMissSrc) ?></strong> missing source provenance</li>
+                <li><strong><?= komodo_e((string) $tImpact) ?></strong> need impact review</li>
+                <li><strong><?= komodo_e((string) $tOverlap) ?></strong> need overlap/cluster review</li>
+            </ul>
+        </section>
 
         <div class="companies-distribution" aria-label="Event attribute distributions">
             <section class="panel-nested panel-muted companies-distribution__panel" aria-labelledby="ev-type-dist">
@@ -230,48 +246,67 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
             </section>
         </div>
 
-        <h3 class="subsection-heading" id="events-attention">Attention queues</h3>
-        <div class="companies-queue-grid" aria-label="Event attention queues">
-            <?php foreach ($queueSpecs as $k => $spec) {
-                $full = (array) ($att[$k] ?? []);
-                $total = count($full);
-                $show = array_slice($full, 0, $queueLimit);
-                $more = max(0, $total - count($show));
-                $headingCount = $sum && isset($sum[$spec['countKey']]) ? (int) $sum[$spec['countKey']] : $total;
-                $hid = 'ev-queue-' . $k;
-                ?>
-                <section class="panel-nested panel-muted companies-queue-card" aria-labelledby="<?= komodo_e($hid) ?>">
-                    <div class="companies-queue-card__head">
-                        <h4 id="<?= komodo_e($hid) ?>" class="subsection-heading subsection-heading-tight"><?= komodo_e($spec['title']) ?></h4>
-                        <span class="coverage-badge coverage-badge--not-started"><?= komodo_e((string) $headingCount) ?></span>
-                    </div>
-                    <?php if (!empty($spec['note'])) { ?>
-                        <p class="compact-note"><?= komodo_e((string) $spec['note']) ?></p>
-                    <?php } ?>
-                    <?php if ($show === []) { ?>
-                        <p class="compact-note">—</p>
-                    <?php } else { ?>
-                        <ul class="companies-queue-list">
-                            <?php foreach ($show as $it) { ?>
-                                <li class="companies-queue-item">
-                                    <span class="companies-queue-item__left">
-                                        <span class="label-primary"><?= komodo_e((string) ($it['event_name'] ?? '')) ?></span>
-                                        <code class="inline-code inline-code--subtle"><?= komodo_e((string) ($it['company_name'] ?? '')) ?></code>
-                                    </span>
-                                    <span class="companies-queue-item__right"><code class="inline-code inline-code--subtle">id=<?= komodo_e((string) ($it['cyber_event_id'] ?? '')) ?></code></span>
-                                </li>
-                            <?php } ?>
-                        </ul>
-                        <?php if ($more > 0) { ?>
-                            <p class="compact-note companies-queue-more">+ <?= komodo_e((string) $more) ?> more</p>
+        <h3 class="subsection-heading" id="events-readiness-cards-heading">Readiness signals</h3>
+        <p class="compact-note">Counts only — not a work queue. Sample rows (max 3) are shortcuts; full lists live elsewhere.</p>
+        <div class="events-readiness-grid" role="region" aria-labelledby="events-readiness-cards-heading">
+            <article class="stat-card stat-card--missing">
+                <div class="stat-card__head">
+                    <h4 class="stat-card__title">Source provenance</h4>
+                </div>
+                <p class="stat-card__value"><?= $tEv > 0 ? komodo_e((string) $tMissSrc . ' / ' . (string) $tEv . ' missing') : '—' ?></p>
+                <p class="compact-note stat-card__dek"><?php if ($tEv > 0 && $tMissSrc === $tEv) { ?>
+                    All events currently lack <code class="inline-code">cyber_event_sources</code> rows. Populate source provenance before treating event metadata as research-ready.
+                <?php } else { ?>
+                    Events without <code class="inline-code">cyber_event_sources</code> rows lack source provenance — populate before treating metadata as research-ready.
+                <?php } ?></p>
+            </article>
+            <article class="stat-card">
+                <div class="stat-card__head">
+                    <h4 class="stat-card__title">Impact review</h4>
+                </div>
+                <p class="stat-card__value"><?= komodo_e((string) $tImpact) ?></p>
+                <p class="compact-note stat-card__dek">Events with high/critical severity but weak or missing quantified impact evidence.</p>
+                <?php if ($exImpact !== []) { ?>
+                    <ul class="events-readiness-examples" aria-label="Sample events for impact review">
+                        <?php foreach ($exImpact as $it) { ?>
+                            <li><code class="inline-code inline-code--subtle"><?= komodo_e($eventsExampleLine($it)) ?></code></li>
                         <?php } ?>
-                    <?php } ?>
-                </section>
-            <?php } ?>
+                    </ul>
+                <?php } ?>
+            </article>
+            <article class="stat-card">
+                <div class="stat-card__head">
+                    <h4 class="stat-card__title">Overlap / cluster review</h4>
+                </div>
+                <p class="stat-card__value"><?= komodo_e((string) $tOverlap) ?></p>
+                <p class="compact-note stat-card__dek">Events close to other cyber events; review independence before event-study use.</p>
+                <?php if ($exOverlap !== []) { ?>
+                    <ul class="events-readiness-examples" aria-label="Sample events for overlap or cluster review">
+                        <?php foreach ($exOverlap as $it) { ?>
+                            <li><code class="inline-code inline-code--subtle"><?= komodo_e($eventsExampleLine($it)) ?></code></li>
+                        <?php } ?>
+                    </ul>
+                <?php } ?>
+            </article>
+            <article class="stat-card">
+                <div class="stat-card__head">
+                    <h4 class="stat-card__title">Research-ready metadata candidates</h4>
+                </div>
+                <p class="stat-card__value"><?= komodo_e((string) $tReady) ?></p>
+                <p class="compact-note stat-card__dek">Requires source provenance plus clean review flags.</p>
+                <?php if ($tReady > 0 && $exReady !== []) { ?>
+                    <ul class="events-readiness-examples" aria-label="Sample research-ready candidates">
+                        <?php foreach ($exReady as $it) { ?>
+                            <li><code class="inline-code inline-code--subtle"><?= komodo_e($eventsExampleLine($it)) ?></code></li>
+                        <?php } ?>
+                    </ul>
+                <?php } ?>
+            </article>
         </div>
+        <p class="compact-note events-readiness-more-link">Full review workflows: <a class="footer-top-link" href="index.php?page=research-quality#rq-heading">Research quality</a> · <a class="footer-top-link" href="index.php?page=data-gaps#dg-cards">Data gaps (gap cards)</a></p>
 
-        <h3 class="subsection-heading" id="events-table-heading">Event list</h3>
-        <p class="compact-note">One row per cyber event. Multiple securities per event show as +N securities. Event detail drilldown is not wired yet — names are not links.</p>
+        <h3 class="subsection-heading" id="events-table-heading">Event catalog</h3>
+        <p class="compact-note">One row per event. Multiple securities show as <strong>+N securities</strong>. Sort order follows disclosure date (newest first). Event drilldown is not wired yet.</p>
         <?php if ($pg['total'] > 0) { ?>
             <div class="companies-table-controls" aria-label="Events table controls">
                 <p class="compact-note">Showing <?= komodo_e((string) $pg['start']) ?>–<?= komodo_e((string) $pg['end']) ?> of <?= komodo_e((string) $pg['total']) ?> events.</p>
@@ -303,7 +338,7 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
             </div>
         <?php } ?>
         <div class="table-scroll">
-            <table class="data-table data-table--sticky data-table--dense data-table--sticky-left" aria-labelledby="events-table-heading">
+            <table class="data-table data-table--sticky data-table--dense data-table--sticky-left data-table--labeled-mobile" aria-labelledby="events-table-heading">
                 <thead>
                     <tr>
                         <th scope="col">Event / company</th>
@@ -331,7 +366,7 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
                         $badges = (array) ($r['review_badge_keys'] ?? []);
                         ?>
                         <tr title="<?= komodo_e('cyber_event_id=' . $eid) ?>">
-                            <td>
+                            <td data-label="Event / company">
                                 <div class="label-stack">
                                     <span class="label-primary"><?= komodo_e($evName) ?></span>
                                     <span class="label-secondary"><?= komodo_e($coName) ?></span>
@@ -346,7 +381,7 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
                                     </span>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Type">
                                 <div class="label-stack">
                                     <span class="label-primary"><?= komodo_e(komodo_label_safe($typeKey, 'generic')) ?></span>
                                     <?php if ($typeKey !== '') { ?>
@@ -354,25 +389,25 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
                                     <?php } ?>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Severity / confidence">
                                 <div class="label-stack">
                                     <span class="label-primary"><?= komodo_e(komodo_label_safe((string) ($r['severity_level'] ?? ''), 'generic')) ?></span>
                                     <span class="label-secondary"><?= komodo_e(komodo_label_safe((string) ($r['confidence_level'] ?? ''), 'generic')) ?></span>
                                 </div>
                             </td>
-                            <td class="compact-note">
+                            <td class="compact-note" data-label="Dates">
                                 <div class="label-stack">
                                     <span><strong>disclosure</strong> <?= komodo_e($disc) ?></span>
                                     <span><strong>first_trading_day</strong> <?= komodo_e($ftd) ?></span>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Readiness">
                                 <div class="label-stack">
                                     <span class="label-primary"<?= $primDesc ? ' title="' . komodo_e($primDesc) . '"' : '' ?>><?= komodo_e($prim) ?></span>
                                     <span class="label-secondary"><?= $src > 0 ? komodo_e('Provenance rows: ' . (string) $src) : komodo_e('No rows in cyber_event_sources') ?></span>
                                 </div>
                             </td>
-                            <td class="compact-note">
+                            <td class="compact-note" data-label="Review flags">
                                 <?php if ($badges === []) { ?>
                                     —
                                 <?php } else { ?>
@@ -391,7 +426,10 @@ $pg = $paginate($allRows, $eventsPage, $perPage);
 
         <details class="market-md-collapsible companies-tech-sources">
             <summary>Technical sources (audit)</summary>
-            <p class="compact-note">Dates use <code class="inline-code inline-code--subtle">cyber_event_dates</code> with <code class="inline-code inline-code--subtle">date_type</code> ∈ { <code class="inline-code inline-code--subtle">disclosure</code>, <code class="inline-code inline-code--subtle">first_trading_day</code> } for primary columns.</p>
+            <p class="compact-note">Primary date columns read <code class="inline-code inline-code--subtle">cyber_event_dates</code> where <code class="inline-code inline-code--subtle">date_type</code> is <strong>disclosure</strong> or <strong>first_trading_day</strong> (explicit types, not guessed legacy column names).</p>
+            <?php if ($sum && (int) ($sum['cyber_event_securities_rows'] ?? 0) > 0) { ?>
+                <p class="compact-note">Bridge table row count (<code class="inline-code">cyber_event_securities</code>): <strong><?= komodo_e((string) (int) ($sum['cyber_event_securities_rows'] ?? 0)) ?></strong> (all event–security links in the database, not deduplicated by event).</p>
+            <?php } ?>
             <ul class="market-insight-checklist compact-note">
                 <?php foreach ((array) ($ev['trace_sources'] ?? []) as $srcName) { ?>
                     <li><span class="label-primary"><?= komodo_e(komodo_label((string) $srcName, 'db_object')) ?></span> <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e((string) $srcName) ?></code></span></li>

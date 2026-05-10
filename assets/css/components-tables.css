@@ -28,6 +28,10 @@
     line-height: 1.3;
 }
 
+.data-table .label-primary {
+    overflow-wrap: anywhere;
+}
+
 .label-secondary {
     color: var(--text-dim);
     line-height: 1.25;
@@ -45,6 +49,26 @@
     -webkit-overflow-scrolling: touch;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-subtle);
+}
+
+/* Stacked YYYY-MM-derived dates (plan window, loaded span) — avoids one long “to” line in narrow columns */
+.date-window-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    line-height: 1.22;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.82rem;
+    color: inherit;
+}
+
+.date-window-stack__line {
+    display: block;
+}
+
+.data-table .triage-date-window-stack {
+    vertical-align: top;
+    white-space: normal;
 }
 
 .data-table {

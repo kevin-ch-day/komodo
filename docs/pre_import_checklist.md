@@ -89,8 +89,8 @@ After each major batch (especially indexes, then event-linked, then comparison):
 
 ## E. Safety reminder
 
-**Price import must run through external scripts, ETL, or CLI — not through the Komodo web UI.** Komodo v0.0.2 has no import buttons and performs no writes.
+**Price import must run through external scripts, ETL, or CLI — not through the Komodo web UI.** Komodo v0.0.3 has no import buttons and performs no writes.
 
 ---
 
-_See also: [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md), [`developer_checks.md`](developer_checks.md)._
+_See also: [`komodo_v0_0_3_milestone.md`](komodo_v0_0_3_milestone.md), [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md), [`developer_checks.md`](developer_checks.md)._

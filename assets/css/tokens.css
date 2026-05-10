@@ -55,7 +55,8 @@
 
     --font: "Segoe UI", system-ui, -apple-system, sans-serif;
     --mono: ui-monospace, "Cascadia Code", "Consolas", monospace;
-    --max: 60rem;
+    /* Default content rail (footer, legacy caps); main column uses full shell width + padding */
+    --max: 80rem;
 
     /* Surfaces that sit on --bg (sidebar strip, header bar) */
     --chrome-tint-top: #24222c;

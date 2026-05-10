@@ -87,7 +87,7 @@ function komodo_get_database_status(): array
         ];
         return $cached;
     } catch (PDOException $e) {
-        error_log('Komodo: PDO connection failed.');
+        error_log('Komodo: PDO connection failed — ' . $e->getMessage());
         $cached = [
             'pdo' => null,
             'status' => 'unreachable',

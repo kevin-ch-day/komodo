@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../app/lib/web_error_handlers.php';
+komodo_register_web_error_handlers();
+
 require_once __DIR__ . '/../app/lib/label_helpers.php';
 require_once __DIR__ . '/../app/config/pages.php';
 require_once __DIR__ . '/../app/lib/dashboard_context.php';
@@ -58,6 +61,12 @@ if ($notFound) {
     ob_start();
     require $pageMap[$pageKey];
     $komodo_main_html = ob_get_clean();
+    if ($pageKey === 'company') {
+        $co = $ctx['company'] ?? null;
+        if (is_array($co) && !empty($co['not_found'])) {
+            http_response_code(404);
+        }
+    }
 }
 
 require __DIR__ . '/../app/partials/layout.php';

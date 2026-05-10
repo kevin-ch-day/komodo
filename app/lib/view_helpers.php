@@ -61,6 +61,27 @@ function komodo_format_display_date_range(mixed $start, mixed $end): string
 }
 
 /**
+ * Two-line date window for dense tables (start on first line, end on second).
+ * Uses a single aria-label on the group so screen readers hear one phrase.
+ *
+ * @return string HTML fragment (escaped); plain "—" when either date is missing
+ */
+function komodo_html_date_window_stack(mixed $start, mixed $end): string
+{
+    $a = komodo_format_display_date($start);
+    $b = komodo_format_display_date($end);
+    if ($a === '' || $b === '') {
+        return '—';
+    }
+    $aria = $a . ' through ' . $b;
+
+    return '<span class="date-window-stack" role="group" aria-label="' . komodo_e($aria) . '">'
+        . '<span class="date-window-stack__line" aria-hidden="true">' . komodo_e($a) . '</span>'
+        . '<span class="date-window-stack__line" aria-hidden="true">' . komodo_e($b) . '</span>'
+        . '</span>';
+}
+
+/**
  * CSS class name for coverage status badges.
  *
  * @param string $kind "security" (default) or "index" for benchmark index rows
@@ -86,4 +107,29 @@ function komodo_coverage_badge_css(string $status, string $kind = 'security'): s
         'partial' => 'coverage-badge--partial',
         default => 'coverage-badge--unknown',
     };
+}
+
+/**
+ * One-line aligned trading-day density (Section 7 model) for dense tables.
+ *
+ * @param array<string, mixed>|null $drow Row from komodo_fetch_aligned_daily_density*
+ *
+ * @return string HTML (escaped fragments)
+ */
+function komodo_html_aligned_density_compact(?array $drow): string
+{
+    if ($drow === null || $drow === []) {
+        return '—';
+    }
+    $exp = (int) ($drow['expected_trading_days'] ?? 0);
+    if ($exp <= 0) {
+        return '—';
+    }
+    $load = (int) ($drow['loaded_aligned_days'] ?? 0);
+    $ratioRaw = $drow['aligned_density_ratio'] ?? null;
+    $ratioStr = ($ratioRaw !== null && $ratioRaw !== '') ? (string) $ratioRaw : '—';
+
+    return komodo_e($ratioStr)
+        . ' <span class="compact-note">('
+        . komodo_e((string) $load) . '/' . komodo_e((string) $exp) . ' US TDs)</span>';
 }

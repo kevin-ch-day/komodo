@@ -186,7 +186,7 @@ $eventCoreTables = $ctx['event_core_tables'];
         ? 'Top gap signals from offline reference scaffolding.'
         : 'Prioritized empties and anomalies from COUNT(*) snapshots — see Data gaps for the full queue.' ?></p>
     <div class="table-scroll">
-        <table class="data-table">
+        <table class="data-table data-table--labeled-mobile">
             <thead>
                 <tr>
                     <th scope="col">Area</th>
@@ -196,8 +196,8 @@ $eventCoreTables = $ctx['event_core_tables'];
             <tbody>
                 <?php foreach ($majorGapRows as $gap) { ?>
                     <tr>
-                        <td><?= komodo_e($gap[0]) ?></td>
-                        <td><?= komodo_e($gap[1]) ?></td>
+                        <td data-label="Area"><?= komodo_e($gap[0]) ?></td>
+                        <td data-label="Detail"><?= komodo_e($gap[1]) ?></td>
                     </tr>
                 <?php } ?>
             </tbody>

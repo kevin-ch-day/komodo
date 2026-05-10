@@ -200,6 +200,49 @@ function komodo_company_security_coverage_status(array $row): string
 }
 
 /**
+ * Compact import-plan flags for the Companies catalog table (full text stays in tooltip / Price audit).
+ *
+ * @return list<array{code: string, label: string}>
+ */
+function komodo_company_security_catalog_flags(array $r): array
+{
+    $flags = [];
+    $seen = [];
+    $add = static function (string $code, string $label) use (&$flags, &$seen): void {
+        if (isset($seen[$code])) {
+            return;
+        }
+        $seen[$code] = true;
+        $flags[] = ['code' => $code, 'label' => $label];
+    };
+
+    $note = isset($r['import_notes']) ? trim((string) $r['import_notes']) : '';
+
+    if ($note !== '' && komodo_import_notes_triage_historical_flag($note)) {
+        $add('hist', 'Historical ticker');
+    }
+
+    if ((string) ($r['company_role'] ?? '') === 'wildcard_volatility_control') {
+        $add('vol', 'Volatility test');
+    }
+
+    if ($note !== '' && komodo_import_notes_triage_special_source_otc_adr($note)) {
+        $add('otc', 'OTC source');
+    } else {
+        $nl = strtolower($note);
+        if ($note !== '' && str_contains($nl, 'otc') && str_contains($nl, 'adr')) {
+            $add('otc', 'OTC source');
+        }
+    }
+
+    if ($note !== '' && preg_match('/\bipo\b|listing|spac|delist/', strtolower($note))) {
+        $add('ipo', 'IPO / listing');
+    }
+
+    return $flags;
+}
+
+/**
  * @param list<array<string, mixed>> $rows
  *
  * @return array<string, int>
@@ -546,8 +589,30 @@ function komodo_build_company_context(?PDO $pdo, array $baseContext, int $compan
         $securities = [];
     } else {
         $securities = $secs['rows'];
+        $secIds = [];
+        foreach ($securities as $r0) {
+            $sid = (int) ($r0['security_id'] ?? 0);
+            if ($sid > 0) {
+                $secIds[] = $sid;
+            }
+        }
+        $densityBySec = [];
+        $densityFetch = komodo_fetch_aligned_daily_density_for_security_ids($pdo, $secIds);
+        if (!$densityFetch['ok']) {
+            $errors[] = 'Aligned daily density could not be loaded for these securities.';
+            $partial = true;
+        } else {
+            foreach ($densityFetch['rows'] as $drow) {
+                $sid = (int) ($drow['security_id'] ?? 0);
+                if ($sid > 0) {
+                    $densityBySec[$sid] = $drow;
+                }
+            }
+        }
         foreach ($securities as &$r) {
             $r['coverage_status'] = komodo_company_security_coverage_status($r);
+            $sid = (int) ($r['security_id'] ?? 0);
+            $r['aligned_daily_density'] = $densityBySec[$sid] ?? null;
         }
         unset($r);
     }
@@ -709,7 +774,9 @@ SQL;
         $stmt->bindValue(':company_id', $companyId, PDO::PARAM_INT);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return ['ok' => true, 'rows' => $rows ?: [], 'error' => null];
+        $rows = komodo_merge_vw_market_plan_import_note_overrides($rows ?: []);
+
+        return ['ok' => true, 'rows' => $rows, 'error' => null];
     } catch (Throwable) {
         return ['ok' => false, 'rows' => [], 'error' => 'exception'];
     }

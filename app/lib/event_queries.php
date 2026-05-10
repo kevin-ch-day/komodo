@@ -57,6 +57,7 @@ function komodo_build_events_context(?PDO $pdo, array $baseContext): array
             'total_events' => 0,
             'events_with_disclosure' => 0,
             'events_with_first_trading_day' => 0,
+            'events_with_security_links' => 0,
             'events_with_sources' => 0,
             'events_missing_sources' => 0,
             'events_needing_impact_review' => 0,
@@ -554,6 +555,7 @@ function komodo_summarize_events(array $rows): array
     $total = count($rows);
     $withDisc = 0;
     $withFtd = 0;
+    $withSec = 0;
     $withSrc = 0;
     $missingSrc = 0;
     $impact = 0;
@@ -568,6 +570,9 @@ function komodo_summarize_events(array $rows): array
         }
         if ($ftd !== null) {
             $withFtd++;
+        }
+        if ((int) ($r['security_link_count'] ?? 0) > 0) {
+            $withSec++;
         }
         $sc = (int) ($r['source_count'] ?? 0);
         if ($sc > 0) {
@@ -592,6 +597,7 @@ function komodo_summarize_events(array $rows): array
         'total_events' => $total,
         'events_with_disclosure' => $withDisc,
         'events_with_first_trading_day' => $withFtd,
+        'events_with_security_links' => $withSec,
         'events_with_sources' => $withSrc,
         'events_missing_sources' => $missingSrc,
         'events_needing_impact_review' => $impact,

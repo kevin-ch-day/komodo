@@ -21,6 +21,14 @@
     vertical-align: top;
 }
 
+.data-table--triage .triage-company-cell .triage-prose-cell {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
 .data-table--triage .triage-date-cell {
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -131,6 +139,179 @@
     word-break: break-word;
 }
 
+/*
+ * Window-gap worklist: company-first action columns; horizontal scroll on desktop.
+ */
+.data-table--worklist-window {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 58rem;
+}
+
+.data-table--worklist-window th,
+.data-table--worklist-window td {
+    overflow-wrap: break-word;
+    word-break: normal;
+    vertical-align: top;
+}
+
+.data-table--worklist-window .triage-prose-cell {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+.triage-worklist-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.triage-worklist-identity__name {
+    font-size: 0.9rem;
+    font-weight: 650;
+    color: var(--text);
+    line-height: 1.35;
+}
+
+/* Ticker on its own line under company — security grain + lineage (FB/META) stay obvious */
+.triage-worklist-identity__ticker {
+    font-size: 0.84rem;
+    line-height: 1.35;
+    margin-top: 0.15rem;
+}
+
+.triage-worklist-ticker-link {
+    text-decoration: none;
+}
+
+.triage-worklist-ticker-link:hover code,
+.triage-worklist-ticker-link:focus-visible code {
+    border-color: var(--accent-a45);
+    color: var(--accent);
+}
+
+.triage-worklist-identity__context {
+    font-size: 0.78rem;
+    line-height: 1.4;
+    margin-top: 0.1rem;
+}
+
+.triage-worklist-row-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    margin: 0.5rem 0 0;
+}
+
+.triage-worklist-cta {
+    text-decoration: none;
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.3;
+    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.65rem;
+    border: 1px solid transparent;
+}
+
+.triage-worklist-cta:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.triage-worklist-cta--primary {
+    color: var(--on-accent);
+    background: var(--accent);
+    border-color: var(--accent-dim);
+}
+
+.triage-worklist-cta--primary:hover {
+    filter: brightness(1.06);
+}
+
+.triage-worklist-cta--secondary {
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 0.78rem;
+    padding: 0.15rem 0;
+    border: 0;
+}
+
+.triage-worklist-cta--secondary:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.triage-worklist-cta__hint {
+    font-weight: 400;
+    color: var(--text-dim);
+}
+
+.data-table--worklist-window th:nth-child(1),
+.data-table--worklist-window td:nth-child(1) {
+    width: 18%;
+    min-width: 12rem;
+}
+
+.data-table--worklist-window th:nth-child(2),
+.data-table--worklist-window td:nth-child(2) {
+    width: 24%;
+    min-width: 13rem;
+}
+
+.data-table--worklist-window th:nth-child(3),
+.data-table--worklist-window td:nth-child(3) {
+    width: 18%;
+    min-width: 11rem;
+}
+
+.data-table--worklist-window th:nth-child(4),
+.data-table--worklist-window td:nth-child(4) {
+    width: 30%;
+    min-width: 14rem;
+}
+
+.data-table--worklist-window th:nth-child(5),
+.data-table--worklist-window td:nth-child(5) {
+    width: 10%;
+    min-width: 8.5rem;
+}
+
+.data-table--worklist-window td:nth-child(5) .coverage-badge {
+    display: inline-flex;
+    flex-wrap: wrap;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+.triage-note-pill {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    background: var(--surface-muted);
+    border: 1px solid var(--border-subtle);
+    cursor: help;
+}
+
+.triage-plan-note-cell {
+    white-space: nowrap;
+}
+
+.triage-import-note-snippet {
+    cursor: help;
+}
+
 .triage-next-batch {
     margin-bottom: 1.15rem;
     padding: 0.75rem 1rem;
@@ -175,4 +356,9 @@
 
 .triage-needs-total-breakdown {
     margin-bottom: 0.35rem;
+}
+
+.triage-window-lead {
+    margin-bottom: 0.45rem;
+    max-width: 48rem;
 }

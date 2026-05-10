@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * CLI structural smoke test for Komodo (v0.0.2).
+ * CLI structural smoke test for Komodo (v0.0.3).
  * Route keys come from app/config/pages.php (same source as public/index.php).
  */
 
@@ -28,6 +28,7 @@ $relPath = static function (string $rel) use ($root): string {
 
 $coreFiles = [
     'public/index.php',
+    'public/fallback.html',
     'index.php',
     'app/config/pages.php',
     'app/config/database.php',
@@ -38,6 +39,7 @@ $coreFiles = [
     'app/lib/label_helpers.php',
     'app/lib/view_helpers.php',
     'app/lib/request_helpers.php',
+    'app/lib/web_error_handlers.php',
     'app/lib/page_context.php',
     'app/lib/event_queries.php',
     'app/lib/dashboard_context.php',
@@ -58,7 +60,6 @@ $coreFiles = [
     'app/partials/market_import_triage_table.php',
     'app/pages/research-quality.php',
     'app/pages/data-gaps.php',
-    'app/pages/pipeline.php',
     'app/pages/not-found.php',
     'assets/css/style.css',
     'assets/js/sidebar-nav.js',

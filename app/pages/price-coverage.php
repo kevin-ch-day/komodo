@@ -27,17 +27,8 @@ $elBucket = isset($byRole['event_linked_security']) && is_array($byRole['event_l
 
 ?>
 <section class="panel shell-section price-coverage-page" aria-labelledby="pcov-heading">
-    <h2 id="pcov-heading">Price coverage</h2>
-    <p class="section-lead">Readiness summary for event-study prep: <strong>are we close to ready, and what is blocking?</strong> This page stays short. Use <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a> for the action worklist and <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a> for the full <code class="inline-code">vw_market_data_import_plan</code> table, role breakdown, indexes, lineage, aligned density, and technical row counts.</p>
-
-    <nav class="market-md-related" aria-label="Related pages">
-        <span class="compact-note">Related:</span>
-        <a class="footer-top-link" href="index.php?page=market-data">Market Data</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>
-    </nav>
+    <h2 id="pcov-heading">Coverage Summary</h2>
+    <p class="section-lead">Readiness summary for event-study prep: <strong>are we close to ready, and what is blocking?</strong> This page stays short. Use <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a> for CSV and import actions and <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a> for the full <code class="inline-code">vw_market_data_import_plan</code> table, role breakdown, indexes, lineage, aligned density, and technical row counts.</p>
 
     <?php if (!$md['available']) { ?>
         <p class="env-note env-note--warn" role="status">Readiness telemetry is hidden until the database is connected.</p>
@@ -61,7 +52,7 @@ $elBucket = isset($byRole['event_linked_security']) && is_array($byRole['event_l
                 <li>Benchmark rows may be present, but <strong>daily</strong> trading-day completeness must be reviewed before event-study calculations.</li>
                 <li>Many current CSV sources appear weekly, not daily.</li>
                 <li><code class="inline-code">security_daily_prices</code> should hold <strong>daily</strong> trading-day bars only — do not import weekly files into that table. <strong>First and last bar dates alone do not prove daily density</strong> — a series can still be weekly or gapped between those dates.</li>
-                <li>Window span checks use ±<?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar-day <strong>slack at each end</strong> of the suggested range; that is separate from <a class="footer-top-link" href="index.php?page=price-audit#audit-aligned-density-heading"><?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?></a> on Price audit.</li>
+                <li>Window span checks use ±<?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar-day <strong>slack at each end</strong> of the suggested range; that is separate from <a class="footer-top-link" href="index.php?page=price-audit#audit-aligned-density-heading"><?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?></a> on Price Audit.</li>
                 <li><strong>FB / META:</strong> Event-linked <code class="inline-code">FB</code> can be window-complete in the plan; the ongoing concern is <strong>source-label lineage</strong> (not missing FB prices by default). <?= komodo_e(komodo_fb_meta_lineage_import_policy_paragraph()) ?></li>
             </ul>
         </aside>
@@ -77,14 +68,14 @@ $elBucket = isset($byRole['event_linked_security']) && is_array($byRole['event_l
                         (string) $rc['event_linked_covers_window']
                         . ' of '
                         . (string) $rc['event_linked_total']
-                        . ' cover the suggested import window (±'
+                        . ' span the suggested import window at Span OK (±'
                         . (string) KOMODO_TRIAGE_WINDOW_SLACK_DAYS
-                        . ' calendar-day slack at each end).'
+                        . ' calendar-day slack at each end — not a daily-density claim).'
                     );
                 } else {
                     $cov = (string) ($elBucket['covers_suggested_window'] ?? '—');
                     $tot = (string) ($elBucket['total'] ?? '—');
-                    echo komodo_e($cov . ' of ' . $tot . ' cover the suggested window (telemetry).');
+                    echo komodo_e($cov . ' of ' . $tot . ' at Span OK vs the suggested window (telemetry; density separate).');
                 }
                 ?></p>
             <?php } ?>
@@ -107,11 +98,11 @@ $elBucket = isset($byRole['event_linked_security']) && is_array($byRole['event_l
                 } else {
                     echo komodo_e('.');
                 }
-                ?> Treat loaded benchmarks as <strong>pipeline validation</strong> until you confirm dense <strong>daily</strong> trading-day data — see the index table on <a class="footer-top-link" href="index.php?page=price-audit#index-coverage">Price audit</a>.</p>
+                ?> Treat loaded benchmarks as <strong>pipeline validation</strong> until you confirm dense <strong>daily</strong> trading-day data — see the index table on <a class="footer-top-link" href="index.php?page=price-audit#index-coverage">Price Audit</a>.</p>
             <?php } ?>
         </section>
 
-        <p class="compact-note" role="navigation">Work queue: <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>. Full audit tables &amp; diagnostics: <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>.</p>
+        <p class="compact-note" role="navigation">Work queue: <a class="footer-top-link" href="index.php?page=price-import-queue">Price Worklist</a>. Full audit tables &amp; diagnostics: <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a>.</p>
 
         <?php if ($md['partial'] && ($md['errors'] ?? []) !== []) { ?>
             <ul class="compact-note env-note env-note--warn" role="list">

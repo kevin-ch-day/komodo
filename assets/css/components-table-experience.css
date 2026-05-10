@@ -1,0 +1,208 @@
+/*
+ * components-table-experience — drill-down rows, labeled mobile cards
+ *
+ * Adopt elsewhere:
+ * 1. Add data-label="Column name" on each <td> (match thead meaning).
+ * 2. Add class data-table--labeled-mobile on the <table>.
+ * 3. Optional: pair main rows with tr.data-table__drilldown-row + .komodo-drilldown (see window triage).
+ */
+
+/* ——— Expandable row (full context below main row) ——— */
+.data-table__drilldown-row td {
+    padding: 0 0.65rem 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface);
+    vertical-align: top;
+}
+
+.komodo-drilldown {
+    margin: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-muted);
+}
+
+.komodo-drilldown__summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.82rem;
+    font-weight: 650;
+    color: var(--text-muted);
+}
+
+.komodo-drilldown__summary::-webkit-details-marker {
+    display: none;
+}
+
+.komodo-drilldown__summary::before {
+    content: "▸ ";
+    display: inline-block;
+    margin-right: 0.25rem;
+    transition: transform 0.12s ease;
+    color: var(--text-dim);
+}
+
+.komodo-drilldown[open] > .komodo-drilldown__summary::before {
+    transform: rotate(90deg);
+}
+
+.komodo-drilldown__body {
+    padding: 0 0.75rem 0.65rem;
+    border-top: 1px dashed var(--border-subtle);
+}
+
+.komodo-drilldown-dl {
+    display: grid;
+    grid-template-columns: minmax(7rem, 10rem) 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.komodo-drilldown-dl dt {
+    margin: 0;
+    font-weight: 650;
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.komodo-drilldown-dl dd {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.komodo-drilldown__actions {
+    margin: 0.65rem 0 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.82rem;
+}
+
+/* ——— Tables with data-label on cells: stack as cards on narrow viewports ——— */
+@media (max-width: 72rem) {
+    .data-table--labeled-mobile {
+        display: block;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .data-table--labeled-mobile thead {
+        display: none;
+    }
+
+    .data-table--labeled-mobile tbody,
+    .data-table--labeled-mobile tbody tr:not(.data-table__drilldown-row) {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table--labeled-mobile tbody tr.triage-window-card {
+        margin-top: 0.75rem;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        background: var(--surface-muted);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .data-table--labeled-mobile tbody tr.triage-window-card td {
+        display: grid;
+        grid-template-columns: minmax(6.5rem, 9rem) 1fr;
+        gap: 0.25rem 0.65rem;
+        align-items: start;
+        border: none;
+        border-bottom: 1px dashed var(--border-subtle);
+        padding: 0.45rem 0.65rem;
+    }
+
+    .data-table--labeled-mobile tbody tr.triage-window-card td:last-child {
+        border-bottom: none;
+    }
+
+    .data-table--labeled-mobile tbody tr.triage-window-card td::before {
+        content: attr(data-label);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+    }
+
+    .data-table--labeled-mobile tbody tr.data-table__drilldown-row {
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--border-subtle);
+        border-top: none;
+        border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+        background: var(--surface);
+    }
+
+    .data-table--labeled-mobile tbody tr.data-table__drilldown-row td {
+        display: block;
+        border: none;
+        padding: 0.35rem 0.5rem 0.65rem;
+    }
+
+    .data-table--labeled-mobile .komodo-drilldown {
+        border: none;
+        background: transparent;
+    }
+
+    /*
+     * Single-row “cards” for any labeled table except window triage (that uses
+     * .triage-window-card + drilldown pairs above).
+     */
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row) {
+        margin-top: 0.75rem;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        background: var(--surface-muted);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row):first-child {
+        margin-top: 0;
+    }
+
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row) td,
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row) th {
+        display: grid;
+        grid-template-columns: minmax(6.5rem, 9rem) 1fr;
+        gap: 0.25rem 0.65rem;
+        align-items: start;
+        border: none;
+        border-bottom: 1px dashed var(--border-subtle);
+        padding: 0.45rem 0.65rem;
+    }
+
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row) td:last-child,
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row) th:last-child {
+        border-bottom: none;
+    }
+
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row) td::before,
+    .data-table--labeled-mobile:not(.data-table--triage-window) tbody > tr:not(.data-table__drilldown-row) th[data-label]::before {
+        content: attr(data-label);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+    }
+
+    /* Sticky first column + card layout fights — drop stickiness in stacked mode */
+    .data-table--labeled-mobile.data-table--sticky-left thead th:first-child,
+    .data-table--labeled-mobile.data-table--sticky-left tbody td:first-child {
+        position: static;
+        left: auto;
+        z-index: auto;
+        box-shadow: none;
+    }
+
+    .data-table--labeled-mobile.data-table--sticky-left thead th:first-child {
+        background: var(--bg-elevated);
+    }
+}

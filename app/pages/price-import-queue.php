@@ -56,17 +56,8 @@ $specC = (int) ($dash['special_notes_count'] ?? 0);
 
 ?>
 <section class="panel shell-section price-import-queue-page" aria-labelledby="piq-heading">
-    <h2 id="piq-heading">Price import triage</h2>
-    <p class="section-lead">Action list for price data still needed. Tickers that <strong>already cover</strong> their suggested import window (including ±<?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar-day slack vs suggested start/end, same idea as the CLI importer) are omitted here — see them in the full plan on <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>. Readiness summary: <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>. All loads run outside Komodo; this page is read-only.</p>
-
-    <nav class="market-md-related" aria-label="Related pages">
-        <span class="compact-note">Related:</span>
-        <a class="footer-top-link" href="index.php?page=market-data">Market Data</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>
-        <span class="market-md-related-sep" aria-hidden="true">·</span>
-        <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>
-    </nav>
+    <h2 id="piq-heading">Price Worklist</h2>
+    <p class="section-lead"><strong>What to do next</strong> — short action rows only. Rows that already <strong>cover</strong> the plan window (±<?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar-day slack) are omitted; see the full grid on <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a>. <strong>Why</strong> a window is wrong, lineage (e.g. FB/META), and aligned density: open the <a class="footer-top-link" href="index.php?page=companies">company</a> drilldown from each row. Snapshot: <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a>. Imports run outside Komodo; read-only here.</p>
 
     <?php if (!$md['available']) { ?>
         <p class="env-note env-note--warn" role="status">Connect the database to build triage lists from <code class="inline-code">vw_market_data_import_plan</code>.</p>
@@ -87,14 +78,14 @@ $specC = (int) ($dash['special_notes_count'] ?? 0);
                 <p class="stat-card__value"><?= komodo_e((string) $completedHidden) ?><?php if ($totalPlan > 0) {
                     echo ' <span class="triage-summary-of">/ ' . komodo_e((string) $totalPlan) . '</span>';
                 } ?></p>
-                <p class="compact-note stat-card__dek">Cover suggested window — see full plan on <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>.</p>
+                <p class="compact-note stat-card__dek">Span OK vs plan window — full plan &amp; density on <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a>.</p>
             </article>
         </div>
 
         <?php if ($openTotal === 0 && $totalPlan > 0) { ?>
             <div class="env-note env-note--success triage-all-clear" role="status">
-                <p class="triage-all-clear__title"><strong>Nothing left in triage.</strong> Every plan row reports <span class="coverage-badge coverage-badge--ok"><?= komodo_e(komodo_label('covers_suggested_window', 'coverage_status')) ?></span> in telemetry.</p>
-                <p class="compact-note triage-all-clear__body">Continue readiness on <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>; benchmarks, lineage, aligned density, and full tables on <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>.</p>
+                <p class="triage-all-clear__title"><strong>Nothing left in triage.</strong> Every plan row reports <span class="coverage-badge coverage-badge--ok"><?= komodo_e(komodo_coverage_catalog_label('covers_suggested_window')) ?></span> in telemetry.</p>
+                <p class="compact-note triage-all-clear__body">Continue readiness on <a class="footer-top-link" href="index.php?page=price-coverage">Coverage Summary</a>; benchmarks, lineage, aligned density, and full tables on <a class="footer-top-link" href="index.php?page=price-audit">Price Audit</a>.</p>
             </div>
         <?php } ?>
 
@@ -181,8 +172,7 @@ $specC = (int) ($dash['special_notes_count'] ?? 0);
 
         <section class="panel-nested panel-phase--inset queue-section queue-section--triage" aria-labelledby="tri-window">
             <h3 id="tri-window" class="subsection-heading">Loaded but missing window coverage <span class="triage-section-count"><?= komodo_e((string) $windowC) ?></span></h3>
-            <p class="compact-note">Each row here is a <strong>real</strong> window gap: the loaded <strong>first or last trade date</strong> falls <strong>outside</strong> the suggested import window by <strong>more than <?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar days</strong> at that end (or dates cannot be matched to the plan). Small calendar alignment—e.g. plan start <strong>Jan 1</strong> vs first bar <strong>Jan 2</strong>—stays <strong>inside</strong> that slack and is <strong>not</strong> flagged. Typical fix: extend CSV coverage (backward, forward, or both), then re-import.</p>
-            <p class="compact-note">Span checks do not see weekly or sparse spacing between dates. <code class="inline-code">security_daily_prices</code> is for <strong>daily</strong> trading-day series; do not load weekly extracts into that table. For the read-only <strong><?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?></strong> signal (intersection with <code class="inline-code">vw_us_trading_days</code>, not a final analysis-ready claim), see <a class="footer-top-link" href="index.php?page=price-audit#audit-aligned-density-heading">Price audit</a>.</p>
+            <p class="compact-note triage-window-lead">Prices exist, but loaded first/last bars miss the plan window by <strong>more than <?= (int) KOMODO_TRIAGE_WINDOW_SLACK_DAYS ?> calendar days</strong> at that end. Use the row for the next import; open <strong>View company detail</strong> for plan vs loaded span, notes, lineage, and <?= komodo_e(KOMODO_ALIGNED_DAILY_DENSITY_LABEL) ?>. Full proof: <a class="footer-top-link" href="index.php?page=price-audit#audit-aligned-density-heading">Price Audit</a>.</p>
             <?php
             $komodo_triage_rows = $windowGaps;
             $komodo_triage_mode = 'window';
@@ -230,7 +220,7 @@ $specC = (int) ($dash['special_notes_count'] ?? 0);
         </section>
 
         <?php if ($totalPlan > 0) { ?>
-            <p class="compact-note" id="tri-full-plan">Full <code class="inline-code">vw_market_data_import_plan</code> table (<?= komodo_e((string) $totalPlan) ?> securities, including window-complete rows): <a class="footer-top-link" href="index.php?page=price-audit#full-plan-heading">Price audit</a>.</p>
+            <p class="compact-note" id="tri-full-plan">Full <code class="inline-code">vw_market_data_import_plan</code> table (<?= komodo_e((string) $totalPlan) ?> securities, including window-complete rows): <a class="footer-top-link" href="index.php?page=price-audit#full-plan-heading">Price Audit</a>.</p>
         <?php } ?>
 
     <?php } ?>
