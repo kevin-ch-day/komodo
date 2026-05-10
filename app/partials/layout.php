@@ -21,6 +21,9 @@ $pageDesc = 'Komodo v'
     <meta name="theme-color" content="#0c0f14">
     <title><?= komodo_e('Komodo v' . KOMODO_APP_VERSION . ' · ' . $doc_title_short) ?></title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <script>
+        document.documentElement.classList.add('js');
+    </script>
 </head>
 <body class="komodo-dash">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -36,5 +39,6 @@ $pageDesc = 'Komodo v'
             <?php require __DIR__ . '/footer.php'; ?>
         </div>
     </div>
+    <script src="../assets/js/sidebar-nav.js" defer></script>
 </body>
 </html>

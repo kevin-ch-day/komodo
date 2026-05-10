@@ -26,7 +26,7 @@ function komodo_hydrate_page_context(string $pageKey, array &$ctx, ?array $query
     $pdo = $ctx['db_status']['pdo'] ?? null;
 
     match ($pageKey) {
-        'market-data' => $ctx['market_data'] = komodo_build_market_data_context($pdo, $ctx),
+        'market-data', 'price-import-queue', 'price-coverage', 'price-audit', 'data-gaps' => $ctx['market_data'] = komodo_build_market_data_context($pdo, $ctx),
         'companies' => $ctx['companies'] = komodo_build_companies_context($pdo, $ctx),
         'company' => $ctx['company'] = komodo_hydrate_company_page_context($pdo, $ctx, $query),
         'events' => $ctx['events'] = komodo_build_events_context($pdo, $ctx),

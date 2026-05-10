@@ -185,11 +185,12 @@ function komodo_desc_lookup(string $key, string $domain): ?string
             'wildcard_volatility_control' => 'Company may be used as a volatility comparison baseline (wildcard control).',
             default => null,
         },
+        // Window gap text: keep numeric slack in sync with KOMODO_TRIAGE_WINDOW_SLACK_DAYS (market_data_queries.php).
         'coverage_status' => match ($key) {
             'not_started' => 'No price rows are loaded for this item yet.',
-            'covers_suggested_window' => 'Loaded price data spans the suggested import window.',
-            'missing_start_window' => 'Loaded prices begin after the suggested import start date.',
-            'missing_end_window' => 'Loaded prices end before the suggested import end date.',
+            'covers_suggested_window' => 'Loaded first/last bars align with the suggested import window, allowing ±7 calendar days slack at each end (non-trading-day / weekly bar tolerance).',
+            'missing_start_window' => 'First loaded bar is more than 7 calendar days after the suggested import start date.',
+            'missing_end_window' => 'Last loaded bar is more than 7 calendar days before the suggested import end date.',
             'has_prices_window_unknown' => 'Prices exist, but the suggested import dates are missing or could not be parsed.',
             'partial_unknown_dates' => 'Prices exist, but first/last trade dates could not be derived.',
             'partial' => 'Prices exist but do not fully span the suggested import window.',

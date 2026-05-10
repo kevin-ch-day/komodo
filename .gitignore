@@ -1,6 +1,12 @@
 # Local secrets and environment
 .env
+.env.local
+.env.*.local
 app/config/local.php
+
+# Local import data (CSV exports — do not commit)
+data/
+*.csv
 
 # Logs and cache
 *.log
@@ -23,8 +29,21 @@ exports/
 *_database_*.sql
 *_prod.sql
 
+# Composer (if added)
+/vendor/
+
+# PHP / test tooling caches
+.phpunit.result.cache
+.php-cs-fixer.cache
+
 # IDE / OS clutter
 .vscode/
 .idea/
 Thumbs.db
 .DS_Store
+desktop.ini
+*.swp
+*~
+
+# Local scratch / notes (optional)
+scratch/

@@ -18,6 +18,9 @@ function komodo_page_routes(): array
         'dataset' => ['template' => 'app/pages/dataset.php', 'title' => 'Dataset'],
         'events' => ['template' => 'app/pages/events.php', 'title' => 'Events'],
         'market-data' => ['template' => 'app/pages/market-data.php', 'title' => 'Market data'],
+        'price-import-queue' => ['template' => 'app/pages/price-import-queue.php', 'title' => 'Price import triage'],
+        'price-coverage' => ['template' => 'app/pages/price-coverage.php', 'title' => 'Price coverage'],
+        'price-audit' => ['template' => 'app/pages/price-audit.php', 'title' => 'Price audit'],
         'research-quality' => ['template' => 'app/pages/research-quality.php', 'title' => 'Research quality'],
         'data-gaps' => ['template' => 'app/pages/data-gaps.php', 'title' => 'Data gaps'],
         'pipeline' => ['template' => 'app/pages/pipeline.php', 'title' => 'Pipeline'],
@@ -38,48 +41,72 @@ function komodo_not_found_page(): array
 }
 
 /**
- * Sidebar navigation order. Keys must exist in komodo_page_routes().
- * Omit drilldown-only routes (e.g. company detail).
+ * Human-readable sidebar label per route (workflow-oriented wording).
+ */
+function komodo_sidebar_route_label(string $routeKey): string
+{
+    return match ($routeKey) {
+        'dashboard' => 'Dashboard',
+        'companies' => 'Companies',
+        'events' => 'Events',
+        'dataset' => 'Dataset',
+        'market-data' => 'Market Data Summary',
+        'price-import-queue' => 'Price Worklist',
+        'price-coverage' => 'Coverage Summary',
+        'price-audit' => 'Price Audit',
+        'research-quality' => 'Research Quality',
+        'data-gaps' => 'Data Gaps',
+        'pipeline' => 'Pipeline Status',
+        default => ucwords(strtolower(komodo_page_routes()[$routeKey]['title'] ?? $routeKey)),
+    };
+}
+
+/**
+ * Sidebar sections (workflow groups). Keys must exist in komodo_page_routes().
+ *
+ * @return list<array{id: string, heading: string, keys: list<string>}>
+ */
+function komodo_sidebar_nav_groups(): array
+{
+    return [
+        [
+            'id' => 'nav-overview',
+            'heading' => 'Overview',
+            'keys' => ['dashboard'],
+        ],
+        [
+            'id' => 'nav-dataset',
+            'heading' => 'Dataset',
+            'keys' => ['companies', 'events', 'dataset'],
+        ],
+        [
+            'id' => 'nav-market-data',
+            'heading' => 'Market Data',
+            'keys' => ['market-data', 'price-import-queue', 'price-coverage', 'price-audit'],
+        ],
+        [
+            'id' => 'nav-quality',
+            'heading' => 'Quality',
+            'keys' => ['research-quality', 'data-gaps', 'pipeline'],
+        ],
+    ];
+}
+
+/**
+ * Flat sidebar route order (smoke tests, link checkers). Derived from groups.
  *
  * @return list<string>
  */
 function komodo_sidebar_nav_keys(): array
 {
-    return [
-        'dashboard',
-        'companies',
-        'dataset',
-        'events',
-        'market-data',
-        'research-quality',
-        'data-gaps',
-        'pipeline',
-    ];
-}
-
-/**
- * Presentation label for sidebar links (doc titles are sentence case in browser chrome).
- */
-function komodo_sidebar_link_label(string $routeTitle): string
-{
-    return ucwords(strtolower($routeTitle));
-}
-
-/**
- * @return list<array{key: string, label: string}>
- */
-function komodo_sidebar_nav_items(): array
-{
     $routes = komodo_page_routes();
     $out = [];
-    foreach (komodo_sidebar_nav_keys() as $key) {
-        if (!isset($routes[$key])) {
-            continue;
+    foreach (komodo_sidebar_nav_groups() as $group) {
+        foreach ($group['keys'] as $key) {
+            if (isset($routes[$key])) {
+                $out[] = $key;
+            }
         }
-        $out[] = [
-            'key' => $key,
-            'label' => komodo_sidebar_link_label($routes[$key]['title']),
-        ];
     }
 
     return $out;

@@ -27,6 +27,40 @@ function komodo_note_preview(?string $note, int $maxLen = 96): array
 }
 
 /**
+ * Format a date-ish value to "Jan 12 2022" (short month, zero-padded day).
+ */
+function komodo_format_display_date(mixed $dateish): string
+{
+    if ($dateish === null || $dateish === '') {
+        return '';
+    }
+    $s = (string) $dateish;
+    if (!preg_match('/^(\d{4}-\d{2}-\d{2})/', $s, $m)) {
+        return '';
+    }
+    $dt = DateTimeImmutable::createFromFormat('Y-m-d', $m[1]);
+    if ($dt === false) {
+        return '';
+    }
+
+    return $dt->format('M d Y');
+}
+
+/**
+ * Suggested window / span label: "Jan 12 2022 to Mar 02 2023".
+ */
+function komodo_format_display_date_range(mixed $start, mixed $end): string
+{
+    $a = komodo_format_display_date($start);
+    $b = komodo_format_display_date($end);
+    if ($a === '' || $b === '') {
+        return '';
+    }
+
+    return "{$a} to {$b}";
+}
+
+/**
  * CSS class name for coverage status badges.
  *
  * @param string $kind "security" (default) or "index" for benchmark index rows

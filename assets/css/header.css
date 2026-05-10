@@ -1,0 +1,107 @@
+﻿/* header — site title row + env banners */
+/* ——— Header ——— */
+.site-header {
+    background: linear-gradient(165deg, var(--chrome-tint-top) 0%, var(--chrome-tint-bottom) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 0 1.35rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+}
+
+.header-brand {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.site-title {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    line-height: 1.15;
+}
+
+.site-subtitle {
+    margin: 0.4rem 0 0;
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.header-purpose {
+    margin: 0.65rem 0 0;
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    max-width: 36rem;
+}
+
+.header-status {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.65rem;
+}
+
+.banner-stack {
+    width: 100%;
+    max-width: 22rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+@media (max-width: 40rem) {
+    .header-status {
+        align-items: flex-start;
+    }
+
+    .banner-stack {
+        max-width: none;
+    }
+}
+
+/* ——— Status alerts (banners) ——— */
+.env-note {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    padding: 0.55rem 0.85rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+}
+
+.env-note--success {
+    color: var(--success);
+    background: var(--success-bg);
+    border-color: rgba(110, 191, 139, 0.35);
+}
+
+.env-note--warn {
+    color: var(--warn);
+    background: var(--warn-bg);
+    border-color: rgba(212, 181, 110, 0.35);
+}
+
+.env-note--error {
+    color: var(--danger);
+    background: var(--danger-bg);
+    border-color: rgba(201, 122, 122, 0.35);
+}
+
+.env-note--muted {
+    color: var(--text-dim);
+    background: var(--surface-muted);
+    border-color: var(--border-subtle);
+}

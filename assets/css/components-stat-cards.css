@@ -1,0 +1,84 @@
+﻿/* components-stat-cards — hero KPI tiles */
+/* ——— Stat cards (hero KPIs) ——— */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.stat-card {
+    background: var(--surface-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-height: 6.25rem;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.stat-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--border);
+}
+
+.stat-card--gap {
+    border-color: rgba(212, 181, 110, 0.25);
+}
+
+.stat-card--missing {
+    border-color: rgba(201, 122, 122, 0.28);
+}
+
+.stat-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.stat-card__title {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+
+.stat-card__code {
+    margin: 0;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+}
+
+.stat-card__code .inline-code {
+    font-size: 0.68rem;
+}
+
+.stat-card__value {
+    margin: 0.15rem 0 0;
+    font-size: 1.5rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.stat-card__value .metric-unavailable,
+.stat-card__value .metric-placeholder {
+    font-size: 1.35rem;
+}
+
+.metric-unavailable {
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+.metric-placeholder {
+    font-style: italic;
+    color: var(--text-dim);
+    font-weight: 500;
+}

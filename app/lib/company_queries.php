@@ -7,6 +7,8 @@ declare(strict_types=1);
  * Driving rowset: vw_market_data_import_plan (security/ticker grain).
  */
 
+require_once __DIR__ . '/market_data_queries.php';
+
 /**
  * @param array<string, mixed> $baseContext
  *
@@ -22,6 +24,8 @@ declare(strict_types=1);
  *   rows: list<array<string, mixed>>,
  *   attention: array<string, list<array<string, mixed>>>
  * }
+ *
+ * Attention keys: event_linked_without_prices, event_linked_window_issues, import_notes (internal), multiple_event_companies, missing_sector_or_industry
  */
 function komodo_build_companies_context(?PDO $pdo, array $baseContext): array
 {
@@ -39,6 +43,7 @@ function komodo_build_companies_context(?PDO $pdo, array $baseContext): array
         'rows' => [],
         'attention' => [
             'event_linked_without_prices' => [],
+            'event_linked_window_issues' => [],
             'import_notes' => [],
             'multiple_event_companies' => [],
             'missing_sector_or_industry' => [],
@@ -176,54 +181,22 @@ SQL;
             return ['ok' => false, 'rows' => [], 'error' => 'query_failed'];
         }
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = komodo_merge_vw_market_plan_import_note_overrides($rows ?: []);
 
-        return ['ok' => true, 'rows' => $rows ?: [], 'error' => null];
+        return ['ok' => true, 'rows' => $rows, 'error' => null];
     } catch (Throwable) {
         return ['ok' => false, 'rows' => [], 'error' => 'exception'];
     }
 }
 
 /**
- * Compute coverage status (same rules as Market Data).
+ * Compute coverage status — delegates to {@see komodo_security_coverage_status} (calendar-day slack, same as triage / Price coverage).
  *
  * @param array<string, mixed> $row
  */
 function komodo_company_security_coverage_status(array $row): string
 {
-    $priceRows = (int) ($row['price_rows'] ?? 0);
-    if ($priceRows === 0) {
-        return 'not_started';
-    }
-
-    $start = $row['suggested_import_start_date'] ?? null;
-    $end = $row['suggested_import_end_date'] ?? null;
-    if ($start === null || $start === '' || $end === null || $end === '') {
-        return 'has_prices_window_unknown';
-    }
-
-    $first = komodo_normalize_date_string($row['first_price_date'] ?? null);
-    $last = komodo_normalize_date_string($row['last_price_date'] ?? null);
-    if ($first === null || $last === null) {
-        return 'partial_unknown_dates';
-    }
-
-    $sStart = komodo_normalize_date_string($start);
-    $sEnd = komodo_normalize_date_string($end);
-    if ($sStart === null || $sEnd === null) {
-        return 'has_prices_window_unknown';
-    }
-
-    if (strcmp($first, $sStart) > 0) {
-        return 'missing_start_window';
-    }
-    if (strcmp($last, $sEnd) < 0) {
-        return 'missing_end_window';
-    }
-    if (strcmp($first, $sStart) <= 0 && strcmp($last, $sEnd) >= 0) {
-        return 'covers_suggested_window';
-    }
-
-    return 'partial';
+    return komodo_security_coverage_status($row);
 }
 
 /**
@@ -243,6 +216,9 @@ function komodo_summarize_companies(array $rows): array
     $withPrices = 0;
     $withoutPrices = 0;
     $withNotes = 0;
+    $eventLinkedNoPrices = 0;
+    $eventLinkedNeedingPriceAttention = 0;
+    $missingClassificationCompanies = [];
 
     foreach ($rows as $r) {
         $totalSecurities++;
@@ -254,6 +230,14 @@ function komodo_summarize_companies(array $rows): array
         $role = (string) ($r['price_import_role'] ?? '');
         if ($role === 'event_linked_security') {
             $eventLinked++;
+            $prEl = (int) ($r['price_rows'] ?? 0);
+            if ($prEl === 0) {
+                $eventLinkedNoPrices++;
+            }
+            $stEl = (string) ($r['coverage_status'] ?? '');
+            if ($stEl !== '' && $stEl !== 'covers_suggested_window') {
+                $eventLinkedNeedingPriceAttention++;
+            }
         } else {
             $comparison++;
         }
@@ -268,6 +252,12 @@ function komodo_summarize_companies(array $rows): array
         $note = isset($r['import_notes']) ? trim((string) $r['import_notes']) : '';
         if ($note !== '') {
             $withNotes++;
+        }
+
+        $secN = (string) ($r['sector_name'] ?? '');
+        $indN = (string) ($r['industry_name'] ?? '');
+        if ($cid !== '' && ($secN === '' || $indN === '')) {
+            $missingClassificationCompanies[$cid] = true;
         }
 
         $secEv = (int) ($r['security_event_count'] ?? 0);
@@ -298,6 +288,9 @@ function komodo_summarize_companies(array $rows): array
         'securities_without_prices' => $withoutPrices,
         'companies_with_multiple_events' => count($companiesWithMultipleEvents),
         'securities_with_import_notes' => $withNotes,
+        'event_linked_without_prices_count' => $eventLinkedNoPrices,
+        'event_linked_needing_price_attention_count' => $eventLinkedNeedingPriceAttention,
+        'missing_classification_companies' => count($missingClassificationCompanies),
     ];
 }
 
@@ -363,6 +356,7 @@ function komodo_summarize_industries(array $rows): array
 function komodo_company_attention_items(array $rows): array
 {
     $eventLinkedNoPrices = [];
+    $eventLinkedWindowIssues = [];
     $notes = [];
     $missingMeta = [];
 
@@ -375,6 +369,15 @@ function komodo_company_attention_items(array $rows): array
 
         if ($role === 'event_linked_security' && $pr === 0) {
             $eventLinkedNoPrices[] = komodo_attention_row($r);
+        }
+
+        if ($role === 'event_linked_security' && $pr > 0) {
+            $st = (string) ($r['coverage_status'] ?? '');
+            if ($st !== '' && $st !== 'covers_suggested_window') {
+                $wi = komodo_attention_row($r);
+                $wi['coverage_status'] = $st;
+                $eventLinkedWindowIssues[] = $wi;
+            }
         }
 
         if ($note !== '') {
@@ -401,6 +404,7 @@ function komodo_company_attention_items(array $rows): array
     }
 
     usort($eventLinkedNoPrices, static fn ($a, $b) => strcmp((string) $a['ticker_symbol'], (string) $b['ticker_symbol']));
+    usort($eventLinkedWindowIssues, static fn ($a, $b) => strcmp((string) $a['ticker_symbol'], (string) $b['ticker_symbol']));
     usort($notes, static fn ($a, $b) => strcmp((string) $a['ticker_symbol'], (string) $b['ticker_symbol']));
     usort($missingMeta, static fn ($a, $b) => strcmp((string) $a['ticker_symbol'], (string) $b['ticker_symbol']));
 
@@ -416,6 +420,7 @@ function komodo_company_attention_items(array $rows): array
 
     return [
         'event_linked_without_prices' => array_slice($eventLinkedNoPrices, 0, 15),
+        'event_linked_window_issues' => array_slice($eventLinkedWindowIssues, 0, 15),
         'import_notes' => array_slice($notes, 0, 15),
         'multiple_event_companies' => array_slice($multiCompanies, 0, 15),
         'missing_sector_or_industry' => array_slice($missingMeta, 0, 15),

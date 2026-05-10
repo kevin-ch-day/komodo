@@ -17,6 +17,7 @@ $companies = $ctx['companies'] ?? [
     'rows' => [],
     'attention' => [
         'event_linked_without_prices' => [],
+        'event_linked_window_issues' => [],
         'import_notes' => [],
         'multiple_event_companies' => [],
         'missing_sector_or_industry' => [],
@@ -51,6 +52,7 @@ $buildCompaniesUrl = static function (int $page, int $perPage): string {
         'companies_page' => $page,
         'per_page' => $perPage,
     ]);
+
     return 'index.php?' . $qs;
 };
 
@@ -76,12 +78,17 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
     ];
 };
 
+$elNoPx = (array) ($att['event_linked_without_prices'] ?? []);
+$elWin = (array) ($att['event_linked_window_issues'] ?? []);
+/** @var array<string, mixed> $sumSafe */
+$sumSafe = is_array($sum) ? $sum : [];
+
 ?>
 <section class="panel shell-section companies-page" aria-labelledby="companies-heading">
     <div class="companies-hero" aria-label="Companies listing header">
         <div class="companies-hero__left">
             <h2 id="companies-heading" class="companies-hero__title">Companies</h2>
-            <p class="companies-hero__subtitle">Read-only listing: companies, tickers, cyber event linkage, sector coverage, and price import readiness.</p>
+            <p class="companies-hero__subtitle">Company and security catalog for the cybersecurity–finance event-study dataset. Price readiness lives on <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>; download work on <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>; full plan QA on <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>.</p>
             <?php if (!$companies['available']) { ?>
                 <span class="badge badge--primary badge--offline">Offline</span>
             <?php } else { ?>
@@ -92,16 +99,29 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
                 <?php } ?>
             <?php } ?>
         </div>
-        <div class="companies-hero__right" aria-label="Current research signal">
-            <?php if ($companies['available'] && $sum) { ?>
-                <p class="companies-hero__signal"><strong><?= komodo_e((string) ($sum['total_securities'] ?? '—')) ?></strong> securities in scope.</p>
-                <p class="companies-hero__signal"><strong><?= komodo_e((string) ($sum['securities_without_prices'] ?? '—')) ?></strong> still missing prices.</p>
-                <p class="companies-hero__signal"><strong><?= komodo_e((string) ($sum['event_linked_securities'] ?? '—')) ?></strong> event-linked securities need price coverage first.</p>
+        <div class="companies-hero__right" aria-label="Catalog snapshot">
+            <?php if ($companies['available'] && $sum) {
+                $elTotal = (int) ($sum['event_linked_securities'] ?? 0);
+                $elNeed = (int) ($sum['event_linked_needing_price_attention_count'] ?? 0);
+                ?>
+                <p class="companies-hero__signal"><strong><?= komodo_e((string) ($sum['total_securities'] ?? '—')) ?></strong> securities in the import plan.</p>
+                <p class="companies-hero__signal"><strong><?= komodo_e((string) $elTotal) ?></strong> event-linked securities in scope; <strong><?= komodo_e((string) $elNeed) ?></strong> still need price attention.</p>
             <?php } else { ?>
-                <p class="companies-hero__signal">Company exploration loads in live DB mode.</p>
+                <p class="companies-hero__signal">Company catalog loads in live DB mode.</p>
             <?php } ?>
         </div>
     </div>
+
+    <nav class="market-md-related" aria-label="Related pages">
+        <span class="compact-note">Related:</span>
+        <a class="footer-top-link" href="index.php?page=market-data">Market Data</a>
+        <span class="market-md-related-sep" aria-hidden="true">·</span>
+        <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a>
+        <span class="market-md-related-sep" aria-hidden="true">·</span>
+        <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a>
+        <span class="market-md-related-sep" aria-hidden="true">·</span>
+        <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>
+    </nav>
 
     <?php if (!$companies['available']) { ?>
         <section class="panel-nested panel-phase--inset" aria-label="Companies offline state">
@@ -117,28 +137,52 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
             </ul>
         <?php } ?>
 
-        <?php /* KPI strip */ ?>
         <div class="companies-kpi-strip" aria-label="Companies KPI strip">
             <div class="companies-kpi"><span class="companies-kpi__label">Companies</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['total_companies'] ?? '—')) : '—' ?></span></div>
             <div class="companies-kpi"><span class="companies-kpi__label">Securities</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['total_securities'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label" title="<?= komodo_e(komodo_describe('event_linked_security', 'role') ?? '') ?>">Event-linked</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['event_linked_securities'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label" title="<?= komodo_e(komodo_describe('comparison_or_unlinked_security', 'role') ?? '') ?>">Comparison</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['comparison_or_unlinked_securities'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">Companies w/ events</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['companies_with_events'] ?? '—')) : '—' ?></span></div>
-            <div class="companies-kpi"><span class="companies-kpi__label">Missing prices</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['securities_without_prices'] ?? '—')) : '—' ?></span></div>
+            <div class="companies-kpi"><span class="companies-kpi__label" title="<?= komodo_e(komodo_describe('event_linked_security', 'role') ?? '') ?>">Event-linked securities</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['event_linked_securities'] ?? '—')) : '—' ?></span></div>
+            <div class="companies-kpi"><span class="companies-kpi__label" title="<?= komodo_e(komodo_describe('comparison_or_unlinked_security', 'role') ?? '') ?>">Comparison / control</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['comparison_or_unlinked_securities'] ?? '—')) : '—' ?></span></div>
+            <div class="companies-kpi"><span class="companies-kpi__label">Companies with events</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['companies_with_events'] ?? '—')) : '—' ?></span></div>
+            <div class="companies-kpi"><span class="companies-kpi__label">Missing classification</span><span class="companies-kpi__value"><?= $sum ? komodo_e((string) ($sum['missing_classification_companies'] ?? '—')) : '—' ?></span></div>
         </div>
+
+        <aside class="panel-nested panel-muted companies-attention-strip" role="region" aria-labelledby="companies-attention-heading">
+            <h3 id="companies-attention-heading" class="subsection-heading subsection-heading-tight">Attention</h3>
+            <ul class="compact-note companies-attention-strip__list">
+                <li><strong>Event-linked, no price rows (<?= komodo_e((string) ($sumSafe['event_linked_without_prices_count'] ?? count($elNoPx))) ?>):</strong> <?php
+                if ($elNoPx === []) {
+                    ?>None.<?php
+                } else {
+                    $tickers = array_map(static fn ($it) => (string) ($it['ticker_symbol'] ?? ''), $elNoPx);
+                    echo komodo_e(implode(', ', array_filter($tickers)));
+                } ?></li>
+                <li><strong>Event-linked, window not covered (prices present, span/slack issue) (<?= komodo_e((string) count($elWin)) ?>):</strong> <?php
+                if ($elWin === []) {
+                    ?>None.<?php
+                } else {
+                    $parts = [];
+                    foreach ($elWin as $wi) {
+                        $t = (string) ($wi['ticker_symbol'] ?? '');
+                        $st = (string) ($wi['coverage_status'] ?? '');
+                        $parts[] = $t !== '' ? ($t . ' (' . $st . ')') : $st;
+                    }
+                    echo komodo_e(implode('; ', $parts));
+                } ?></li>
+            </ul>
+            <p class="compact-note"><strong>FB / META (lineage, not a missing-price issue):</strong> Event-linked <code class="inline-code">FB</code> can be window-complete; vendors may label historical Facebook files <code class="inline-code">META</code> — map pre–June 2022 rows to the <code class="inline-code">FB</code> security record when events tie to <code class="inline-code">FB</code>. Policy: <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a> · <a class="footer-top-link" href="index.php?page=price-audit#lineage-heading">Price audit (lineage)</a>.</p>
+            <p class="compact-note"><strong><?= komodo_e((string) ($sumSafe['companies_with_multiple_events'] ?? 0)) ?></strong> companies have repeated cyber events (see catalog for which).</p>
+            <p class="compact-note">Next steps for prices: <a class="footer-top-link" href="index.php?page=price-import-queue">Price import triage</a> · Readiness: <a class="footer-top-link" href="index.php?page=price-coverage">Price coverage</a> · Raw plan / notes: <a class="footer-top-link" href="index.php?page=price-audit">Price audit</a>.</p>
+        </aside>
 
         <details class="market-md-collapsible companies-tech-sources">
             <summary>Technical sources (audit)</summary>
             <ul class="market-insight-checklist compact-note">
                 <li><span class="label-primary">Driving rowset</span> <span class="label-secondary"><code class="inline-code inline-code--subtle">vw_market_data_import_plan</code></span></li>
                 <li><span class="label-primary">Company metadata</span> <span class="label-secondary"><code class="inline-code inline-code--subtle">companies</code>, <code class="inline-code inline-code--subtle">sectors</code>, <code class="inline-code inline-code--subtle">industries</code></span></li>
-                <li><span class="label-primary">Ticker metadata</span> <span class="label-secondary"><code class="inline-code inline-code--subtle">securities</code></span></li>
-                <li><span class="label-primary">Price aggregates</span> <span class="label-secondary"><code class="inline-code inline-code--subtle">security_daily_prices</code> (COUNT/MIN/MAX)</span></li>
-                <li><span class="label-primary">Event linkage</span> <span class="label-secondary"><code class="inline-code inline-code--subtle">cyber_event_securities</code> (COUNT DISTINCT)</span></li>
+                <li><span class="label-primary">Event linkage</span> <span class="label-secondary"><code class="inline-code inline-code--subtle">cyber_event_securities</code></span></li>
             </ul>
         </details>
 
-        <?php /* B. Sector / Industry distribution snapshot */ ?>
         <?php
         $sectors = (array) ($companies['sector_summary'] ?? []);
         $industries = (array) ($companies['industry_summary'] ?? []);
@@ -194,67 +238,8 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
             </section>
         </div>
 
-        <?php /* C. Attention queue */ ?>
-        <h3 class="subsection-heading" id="companies-attention">Attention queue</h3>
-        <?php
-        $queueLimit = 10;
-        $queueSpecs = [
-            'event_linked_without_prices' => ['title' => 'Event-linked tickers missing prices', 'countKey' => 'event_linked_securities'],
-            'import_notes' => ['title' => 'Special import notes', 'countKey' => 'securities_with_import_notes'],
-            'multiple_event_companies' => ['title' => 'Companies with repeated cyber events', 'countKey' => 'companies_with_multiple_events'],
-            'missing_sector_or_industry' => ['title' => 'Missing classification', 'countKey' => null],
-        ];
-        ?>
-        <div class="companies-queue-grid" aria-label="Attention queue cards">
-            <?php foreach ($queueSpecs as $k => $spec) {
-                $full = (array) ($att[$k] ?? []);
-                $total = count($full);
-                $show = array_slice($full, 0, $queueLimit);
-                $more = max(0, $total - count($show));
-                $headingCount = $total;
-                if ($sum && $spec['countKey']) {
-                    $headingCount = (int) ($sum[$spec['countKey']] ?? $total);
-                }
-                $hid = 'queue-' . $k;
-                ?>
-                <section class="panel-nested panel-muted companies-queue-card" aria-labelledby="<?= komodo_e($hid) ?>">
-                    <div class="companies-queue-card__head">
-                        <h4 id="<?= komodo_e($hid) ?>" class="subsection-heading subsection-heading-tight"><?= komodo_e($spec['title']) ?></h4>
-                        <span class="coverage-badge coverage-badge--not-started"><?= komodo_e((string) $headingCount) ?></span>
-                    </div>
-                    <?php if ($show === []) { ?>
-                        <p class="compact-note">—</p>
-                    <?php } else { ?>
-                        <ul class="companies-queue-list">
-                            <?php foreach ($show as $it) {
-                                $cName = (string) ($it['company_name'] ?? '');
-                                $ticker = (string) ($it['ticker_symbol'] ?? '');
-                                $cev = (int) ($it['company_event_count'] ?? 0);
-                                $sev = (int) ($it['security_event_count'] ?? 0);
-                                $evHint = $cev > 0 ? ($cev . ' events') : ($sev > 0 ? ($sev . ' events') : '');
-                                ?>
-                                <li class="companies-queue-item">
-                                    <span class="companies-queue-item__left">
-                                        <span class="label-primary"><?= komodo_e($cName) ?></span>
-                                        <?php if ($ticker !== '') { ?>
-                                            <code class="inline-code inline-code--subtle"><?= komodo_e($ticker) ?></code>
-                                        <?php } ?>
-                                    </span>
-                                    <span class="companies-queue-item__right"><?= $evHint !== '' ? komodo_e($evHint) : '' ?></span>
-                                </li>
-                            <?php } ?>
-                        </ul>
-                        <?php if ($more > 0) { ?>
-                            <p class="compact-note companies-queue-more">+ <?= komodo_e((string) $more) ?> more</p>
-                        <?php } ?>
-                    <?php } ?>
-                </section>
-            <?php } ?>
-        </div>
-
-        <?php /* D. Main table */ ?>
         <h3 class="subsection-heading" id="companies-table">Company / security table</h3>
-        <p class="compact-note">This table is security/ticker-grain. A company may appear more than once when multiple securities or historical tickers are in scope.</p>
+        <p class="compact-note">Ticker-grain catalog (a company may appear more than once). Coverage badges mirror the import plan; <code class="inline-code">import_notes</code> repeats plan-level callouts here so you do not need the audit table for a quick scan. For gaps and downloads use <a class="footer-top-link" href="index.php?page=price-import-queue">triage</a>. Hover a company name for internal ids.</p>
         <?php
         /** @var list<array<string, mixed>> $allRows */
         $allRows = (array) ($companies['rows'] ?? []);
@@ -298,7 +283,7 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
                         <th scope="col">Sector / industry</th>
                         <th scope="col">Role</th>
                         <th scope="col" class="num">Events</th>
-                        <th scope="col">Price coverage</th>
+                        <th scope="col">Price (plan)</th>
                         <th scope="col">Notes</th>
                     </tr>
                 </thead>
@@ -315,8 +300,6 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
 
                         [$noteDisp, $noteFull, $noteHasTitle] = komodo_note_preview(isset($r['import_notes']) ? (string) $r['import_notes'] : '', 96);
 
-                        $first = komodo_normalize_date_string($r['first_price_date'] ?? null);
-                        $last = komodo_normalize_date_string($r['last_price_date'] ?? null);
                         $secEv = (int) ($r['security_event_count'] ?? 0);
                         $planEv = (int) ($r['linked_event_count'] ?? 0);
                         $events = max($secEv, $planEv);
@@ -324,30 +307,23 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
                         $ticker = (string) ($r['ticker_symbol'] ?? '');
                         $companyId = (string) ($r['company_id'] ?? '');
                         $securityId = (string) ($r['security_id'] ?? '');
-                        $priceRows = (int) ($r['price_rows'] ?? 0);
 
                         $sector = (string) ($r['sector_name'] ?? '—');
                         $industry = (string) ($r['industry_name'] ?? '—');
                         $exchange = (string) ($r['exchange_code'] ?? '');
-
-                        $span = '—';
-                        if ($priceRows > 0 && $first && $last) {
-                            $span = $first . ' → ' . $last;
-                        }
+                        $idsTitle = 'company_id=' . $companyId . '; security_id=' . $securityId;
                         ?>
                         <tr>
-                            <td title="<?= komodo_e('company_id=' . $companyId . ' · security_id=' . $securityId) ?>">
+                            <td>
                                 <div class="label-stack">
                                     <span class="label-primary">
-                                        <a class="companies-link" href="index.php?page=company&company_id=<?= komodo_e($companyId) ?>"><?= komodo_e($companyName) ?></a>
+                                        <a class="companies-link" href="index.php?page=company&company_id=<?= komodo_e($companyId) ?>" title="<?= komodo_e($idsTitle) ?>"><?= komodo_e($companyName) ?></a>
                                     </span>
                                     <span class="label-secondary">
                                         <code class="inline-code"><?= komodo_e($ticker) ?></code>
                                         <?php if ($exchange !== '') { ?>
                                             <span class="compact-note"><?= komodo_e($exchange) ?></span>
                                         <?php } ?>
-                                        <code class="inline-code inline-code--subtle">company_id=<?= komodo_e($companyId) ?></code>
-                                        <code class="inline-code inline-code--subtle">security_id=<?= komodo_e($securityId) ?></code>
                                     </span>
                                 </div>
                             </td>
@@ -358,26 +334,17 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
                                 </div>
                             </td>
                             <td>
-                                <div class="label-stack">
-                                    <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
-                                    <?php if ($roleKey !== '') { ?>
-                                        <span class="label-secondary"><code class="inline-code inline-code--subtle"><?= komodo_e($roleKey) ?></code></span>
-                                    <?php } ?>
-                                </div>
+                                <span class="label-primary"<?= $roleDesc ? ' title="' . komodo_e($roleDesc . ($roleKey !== '' ? ' (' . $roleKey . ')' : '')) . '"' : '' ?>><?= komodo_e($roleLabel) ?></span>
                             </td>
                             <td class="num"><?= komodo_e((string) $events) ?></td>
                             <td>
-                                <div class="label-stack">
-                                    <span class="label-primary">
-                                        <span class="coverage-badge <?= komodo_e($covClass) ?>"<?= $covDesc ? ' title="' . komodo_e($covDesc) . '"' : '' ?>><?= komodo_e($covLabel) ?></span>
-                                        <span class="compact-note">· <?= komodo_e((string) $priceRows) ?> rows</span>
-                                    </span>
-                                    <span class="label-secondary"><?= komodo_e($span) ?></span>
-                                </div>
+                                <span class="coverage-badge <?= komodo_e($covClass) ?>"<?= $covDesc ? ' title="' . komodo_e($covDesc) . '"' : '' ?>><?= komodo_e($covLabel) ?></span>
                             </td>
                             <td class="compact-note"><?php if ($noteDisp !== '') { ?>
                                 <span<?= $noteHasTitle ? ' title="' . $noteFull . '"' : '' ?>><?= $noteDisp ?></span>
-                            <?php } else { echo '—'; } ?></td>
+                            <?php } else {
+                                echo '—';
+                            } ?></td>
                         </tr>
                     <?php } ?>
                 </tbody>
@@ -386,4 +353,3 @@ $paginate = static function (array $rows, int $page, int $perPage): array {
 
     <?php } ?>
 </section>
-

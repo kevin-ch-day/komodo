@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 require_once $root . '/app/config/pages.php';
+require_once $root . '/tools/komodo_css_check.php';
 
 $fail = false;
 
@@ -49,11 +50,19 @@ $coreFiles = [
     'app/pages/dataset.php',
     'app/pages/events.php',
     'app/pages/market-data.php',
+    'app/pages/price-import-queue.php',
+    'app/pages/price-coverage.php',
+    'app/pages/price-audit.php',
+    'app/partials/market_security_queue_table.php',
+    'app/partials/price_import_readiness_section.php',
+    'app/partials/market_import_triage_table.php',
     'app/pages/research-quality.php',
     'app/pages/data-gaps.php',
     'app/pages/pipeline.php',
     'app/pages/not-found.php',
     'assets/css/style.css',
+    'assets/js/sidebar-nav.js',
+    'tools/komodo_css_check.php',
 ];
 
 foreach ($coreFiles as $rel) {
@@ -62,6 +71,25 @@ foreach ($coreFiles as $rel) {
         $p('expected file exists: ' . $rel);
     } else {
         $f('missing file: ' . $rel);
+    }
+}
+
+$toolFiles = [
+    'tools/import_index_prices.php',
+    'tools/import_security_prices.php',
+    'tools/cleanup_stale_import_csvs.php',
+    'tools/komodo_db_check.php',
+    'tools/komodo_security_scan.php',
+    'tools/komodo_smoke.php',
+    'tools/lint_all.bat',
+    'tools/check_all.bat',
+];
+foreach ($toolFiles as $rel) {
+    $path = $relPath($rel);
+    if (is_file($path)) {
+        $p('expected tool exists: ' . $rel);
+    } else {
+        $f('missing tool: ' . $rel);
     }
 }
 
@@ -142,6 +170,13 @@ if (is_readable($localPhp)) {
     $p('optional app/config/local.php is present');
 } else {
     $p('optional app/config/local.php absent (offline OK)');
+}
+
+foreach (komodo_css_validate_bundle($root)['errors'] as $cssErr) {
+    $f($cssErr);
+}
+if (!$fail) {
+    $p('CSS bundle: style.css imports resolve, no orphan partials');
 }
 
 exit($fail ? 1 : 0);

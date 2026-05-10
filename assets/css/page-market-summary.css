@@ -1,0 +1,104 @@
+﻿/* page-market-summary — market overview, queues, attention rows */
+/* ——— Market Data coverage ——— */
+.market-data-overview .market-md-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1rem;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.market-md-mode-lead {
+    margin: 0;
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.market-md-error-list {
+    margin: 0 0 0.75rem;
+    padding-left: 1.2rem;
+    color: var(--warn);
+}
+
+.market-md-next-steps {
+    margin: 0;
+    padding-left: 1.35rem;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    max-width: 44rem;
+}
+
+.market-md-next-steps li {
+    margin-bottom: 0.4rem;
+}
+
+.market-summary-grid {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    margin: 1.25rem 0 1.5rem;
+}
+
+.market-summary-grid--primary {
+    margin-top: 0.35rem;
+}
+
+.market-summary-grid--compact {
+    margin-top: 0.65rem;
+    margin-bottom: 0.25rem;
+}
+
+.market-summary-card--compact .stat-card__title {
+    font-size: 0.78rem;
+}
+
+.market-summary-card--compact .stat-card__value {
+    font-size: 1.1rem;
+}
+
+.market-plan-composition {
+    margin: 0.25rem 0 1.35rem;
+}
+
+.market-readiness-conclusion {
+    margin: 1rem 0;
+}
+
+.market-readiness-conclusion__body {
+    margin: 0.35rem 0 0;
+    max-width: 52rem;
+}
+
+.market-readiness-conclusion--compact .section-lead {
+    margin-bottom: 0.35rem;
+}
+
+.market-dq-warnings {
+    margin: 1rem 0;
+}
+
+.market-dq-warnings__list {
+    margin: 0.5rem 0 0;
+    padding-left: 1.15rem;
+    max-width: 48rem;
+}
+
+.market-pipeline-examples,
+.market-lineage-callouts {
+    margin: 0.6rem 0 0;
+    padding-left: 1.15rem;
+    max-width: 48rem;
+}
+
+.priority-attention-row td {
+    background: var(--accent-a07);
+    box-shadow: inset 3px 0 0 var(--accent-dim);
+}
+
+.queue-section--priority {
+    margin-bottom: 1rem;
+}
+
+.queue-section--triage {
+    margin-bottom: 1rem;
+}

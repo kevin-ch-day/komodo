@@ -96,7 +96,7 @@ Baseline counts as verified for this milestone (live `COUNT(*)` against the curr
 
 1. Audit **`market_indexes`** (definitions you intend to load).
 2. Audit **`index_daily_prices`** schema and constraints.
-3. Confirm **`data_sources`** (and any provider metadata you rely on).
+3. Optional: track provider metadata in docs or a private import log (Komodo does not store `data_sources` for prices).
 4. Load **`index_daily_prices`** using an **external** CLI/script (not the web UI).
 5. Refresh Komodo **Market Data** (coverage + price import readiness).
 6. Load **event-linked** security prices (`security_daily_prices`).

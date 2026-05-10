@@ -1,0 +1,70 @@
+﻿/* components-panels — .panel, phases, section headings */
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.35rem 1.4rem;
+    margin-bottom: 1.15rem;
+    box-shadow: var(--shadow);
+}
+
+.panel-muted {
+    background: var(--surface-muted);
+    border-style: dashed;
+    border-color: var(--border-subtle);
+}
+
+.panel h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.12rem;
+    font-weight: 650;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.subsection-heading {
+    margin: 1.35rem 0 0.65rem;
+    font-size: 0.82rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+}
+
+.section-lead {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    max-width: 44rem;
+}
+
+.panel-phase {
+    border-left: 4px solid var(--accent-dim);
+    background: linear-gradient(90deg, var(--accent-soft) 0%, var(--surface) 40%);
+}
+
+.phase-title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.phase-lead {
+    margin-top: 0.5rem;
+}
+
+.phase-status-list {
+    margin: 0.85rem 0 0;
+    padding-left: 1.2rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.phase-status-list li {
+    margin-bottom: 0.35rem;
+}
+
+.phase-status-list li:last-child {
+    margin-bottom: 0;
+}

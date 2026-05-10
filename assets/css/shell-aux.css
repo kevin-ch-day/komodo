@@ -1,0 +1,131 @@
+﻿/* shell-aux — sidebar legend, metric hint, shell footer strip */
+.sidebar-legend-collapsed {
+    flex: 0 0 auto;
+    margin-top: 0.625rem;
+    padding-top: 0;
+    border-top: 1px dashed var(--border-subtle);
+}
+
+.sidebar-legend-summary {
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    list-style: none;
+    line-height: 1.2;
+    padding: 0.2rem 0;
+}
+
+.sidebar-legend-summary::-webkit-details-marker {
+    display: none;
+}
+
+.sidebar-legend-collapsed[open] {
+    padding-bottom: 0.25rem;
+}
+
+.sidebar-legend-collapsed[open] .sidebar-legend {
+    padding-top: 0.45rem;
+    border-top: none;
+}
+
+.metric-hint {
+    margin: 0 0 1rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    max-width: 44rem;
+    line-height: 1.5;
+}
+
+.sidebar-legend {
+    padding-top: 0.35rem;
+    border-top: 1px dashed var(--border-subtle);
+}
+
+.sidebar-legend-title {
+    margin: 0 0 0.4rem;
+    font-size: 0.74rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+}
+
+.legend-list {
+    margin: 0;
+}
+
+.legend-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 0.5rem;
+    align-items: start;
+    margin-bottom: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.legend-row:last-child {
+    margin-bottom: 0;
+}
+
+.legend-row dt {
+    margin: 0;
+}
+
+.legend-row dd {
+    margin: 0;
+    line-height: 1.35;
+}
+
+@media (min-width: 56rem) {
+    .sidebar-legend-collapsed {
+        margin-top: 0.5rem;
+        border-top-style: solid;
+    }
+
+    .sidebar-legend {
+        border-top-style: solid;
+    }
+
+    /* Closed = one compact row; only grows when user opens <details> */
+    .sidebar-legend-collapsed:not([open]) .sidebar-legend-summary {
+        opacity: 0.88;
+    }
+}
+
+.site-footer--shell {
+    border-top: 1px solid var(--border);
+    padding: 1rem clamp(1rem, 4vw, 2rem);
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    background: var(--surface-muted);
+}
+
+.site-footer--shell p {
+    margin: 0;
+    width: min(100% - 2rem, var(--max));
+    margin-inline: auto;
+}
+
+.footer-meta {
+    margin-top: 0.55rem !important;
+    opacity: 0.92;
+}
+
+.footer-top-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.footer-top-link:hover {
+    text-decoration: underline;
+}
+
+.footer-top-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}

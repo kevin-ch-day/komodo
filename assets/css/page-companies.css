@@ -1,0 +1,273 @@
+﻿/* page-companies — entity catalog, queues, company drilldown hooks */
+.companies-page .companies-tech-sources {
+    margin-top: 0.75rem;
+    opacity: 0.96;
+}
+
+.events-page .events-hero__date-note {
+    margin-top: 0.35rem;
+    max-width: 48rem;
+}
+
+.events-page .events-flag-badge {
+    display: inline-flex;
+    margin: 0.15rem 0.15rem 0 0;
+}
+
+.companies-page .market-md-snapshot-card h3,
+.companies-page .market-md-snapshot-card h4 {
+    margin-bottom: 0.35rem;
+}
+
+/* ——— Companies dashboard (entity lens) ——— */
+.companies-hero {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    align-items: flex-start;
+    margin-bottom: 0.9rem;
+}
+
+.companies-hero__left {
+    flex: 2 1 22rem;
+    min-width: 0;
+}
+
+.companies-hero__right {
+    flex: 1 1 16rem;
+    min-width: 12rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-muted);
+}
+
+.companies-hero__title {
+    margin: 0;
+}
+
+.companies-hero__subtitle {
+    margin: 0.4rem 0 0.65rem;
+    color: var(--text-muted);
+    max-width: 48rem;
+}
+
+.companies-hero__signal {
+    margin: 0 0 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.companies-hero__signal strong {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.companies-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0.55rem;
+    margin: 0.85rem 0 1rem;
+}
+
+.companies-kpi {
+    background: var(--surface-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.75rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.companies-kpi__label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.2rem;
+}
+
+.companies-kpi__value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 650;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+}
+
+.companies-distribution {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: 0.85rem;
+    margin: 0.9rem 0 1.1rem;
+}
+
+.companies-distribution__panel {
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+}
+
+.companies-dist-list {
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.companies-dist-row {
+    display: grid;
+    grid-template-columns: minmax(9rem, 1fr) 8rem 2.75rem;
+    gap: 0.65rem;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+}
+
+.companies-dist-row__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.companies-dist-row__bar {
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--accent-a12);
+    border: 1px solid var(--accent-a18);
+    overflow: hidden;
+}
+
+.companies-dist-row__barFill {
+    display: block;
+    height: 100%;
+    background: var(--accent-a55);
+}
+
+.companies-dist-row__count {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+}
+
+.companies-queue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: 0.85rem;
+    margin: 0.75rem 0 1.25rem;
+}
+
+.companies-queue-card {
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+}
+
+.companies-queue-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.35rem;
+}
+
+.companies-queue-list {
+    list-style: none;
+    margin: 0.45rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.companies-queue-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: baseline;
+}
+
+.companies-queue-item__left {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.companies-queue-item__right {
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.companies-queue-more {
+    margin-top: 0.45rem;
+    color: var(--text-dim);
+}
+
+.companies-table-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0.75rem 0 0.5rem;
+}
+
+.companies-pager {
+    display: inline-flex;
+    gap: 0.65rem;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+}
+
+.companies-pager__meta {
+    color: var(--text-dim);
+}
+
+.companies-pager__disabled {
+    color: var(--text-dim);
+    opacity: 0.7;
+}
+
+.companies-per-page {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: var(--text-muted);
+}
+
+.companies-per-page__current {
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-subtle);
+    background: var(--accent-a08);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.companies-link {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.companies-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.companies-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.company-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    align-items: baseline;
+    margin: 0.35rem 0 0;
+}

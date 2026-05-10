@@ -2,6 +2,10 @@
 
 Use this before loading **`index_daily_prices`** and **`security_daily_prices`** from **external** tools. Komodo remains read-only; it does not run imports.
 
+**Local CSV → DB (CLI):** see [`local_csv_index_import.md`](local_csv_index_import.md) for `tools/import_index_prices.php` (index prices only; still not a web import). Security CSVs: [`local_csv_security_import.md`](local_csv_security_import.md).
+
+**Schema:** Komodo importers target `index_daily_prices` / `security_daily_prices` **without** `data_source_id`. If your database still has `data_sources` and FK columns, apply [`sql/remove_data_sources.sql`](../sql/remove_data_sources.sql) in MariaDB only after backup and review (not run from this repo).
+
 ---
 
 ## A. Database checks to run manually
@@ -31,18 +35,6 @@ SHOW COLUMNS FROM index_daily_prices;
 
 ```sql
 SHOW COLUMNS FROM security_daily_prices;
-```
-
-### Data sources
-
-```sql
-SELECT
-    data_source_id,
-    source_name,
-    source_type,
-    base_url
-FROM data_sources
-ORDER BY data_source_id;
 ```
 
 ### Market data import plan (by role)
@@ -78,6 +70,8 @@ Align expectations with Komodo telemetry before you load prices:
 3. **Comparison / unlinked** securities (`security_daily_prices`)  
 4. **Coverage QA** (reload Komodo Market Data; compare to suggested windows)  
 5. **Event-study computation** later, outside Komodo  
+
+After a successful batch import, optional **disk hygiene:** run `tools/cleanup_stale_import_csvs.php` (dry-run, then `--execute`) so older `SYMBOL_<export>_<range>.csv` pulls in the same folder are removed — see [`local_csv_index_import.md`](local_csv_index_import.md).
 
 ---
 

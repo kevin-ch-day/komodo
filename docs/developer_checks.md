@@ -6,9 +6,48 @@ Run commands from the project root (`D:\Windows\xampp\htdocs\komodo`) unless not
 
 ---
 
+## `tools/import_index_prices.php`
+
+**Purpose:** **CLI-only** loader for local **index** CSV files into `index_daily_prices` (UPSERT). Uses `get_pdo()` from `app/config/database.php`. **Not** part of the web app — run with `php.exe` from a shell. See [`local_csv_index_import.md`](local_csv_index_import.md).
+
+```bat
+D:\Windows\xampp\php\php.exe tools\import_index_prices.php --dir=...\data\djia --index-code=DJIA --dry-run
+```
+
+Default is **dry-run**; **`--execute`** is required to write.
+
+---
+
+## `tools/import_security_prices.php`
+
+**Purpose:** **CLI-only** loader for local **security** CSV files into `security_daily_prices` (UPSERT). Resolves **`--ticker`** to `security_id` via the `securities` table (no hardcoded map). With **`--dir`**, only files named `{TICKER}_*.csv` are read. Supports **batch** mode (`--all`, `--tickers=A,B`, default directory `data/securities`). See [`local_csv_security_import.md`](local_csv_security_import.md).
+
+```bat
+D:\Windows\xampp\php\php.exe tools\import_security_prices.php --dir=...\data\securities --ticker=EFX --dry-run
+```
+
+```bat
+D:\Windows\xampp\php\php.exe tools\import_security_prices.php --all --dry-run
+```
+
+Default is **dry-run**; **`--execute`** is required to write.
+
+---
+
+## `tools/cleanup_stale_import_csvs.php`
+
+**Purpose:** **CLI-only** helper to list (or delete) redundant CSVs named `SYMBOL_<exportTs>_<rangeTs>.csv` when an older **export** id sits next to a newer one in the same folder. Default **dry-run**; **`--execute`** unlinks stale files. See [`local_csv_index_import.md`](local_csv_index_import.md) (stale exports section).
+
+```bat
+D:\Windows\xampp\php\php.exe tools\cleanup_stale_import_csvs.php
+D:\Windows\xampp\php\php.exe tools\cleanup_stale_import_csvs.php --execute
+```
+
+---
+
 ## `tools/komodo_smoke.php`
 
-**Purpose:** Structural smoke test — critical files exist, route keys match `komodo_page_routes()` in `app/config/pages.php` (same source as `public/index.php`), unknown keys stay unmapped, `.gitignore` covers `local.php`, optional git check ensures `app/config/local.php` is **not tracked**.
+**Purpose:** Structural smoke test — critical files exist, route keys match `komodo_page_routes()` in `app/config/pages.php` (same source as `public/index.php`), unknown keys stay unmapped, `.gitignore` covers `local.php`, optional git check ensures `app/config/local.php` is **not tracked**, and the CSS bundle from `assets/css/style.css` resolves (via `komodo_css_validate_bundle()`).
 
 ```bat
 D:\Windows\xampp\php\php.exe tools\komodo_smoke.php
@@ -17,9 +56,23 @@ D:\Windows\xampp\php\php.exe tools\komodo_smoke.php
 - **Offline:** Fully valid — **exit 0** when all PASS.
 - **Fails:** Missing file / bad route bookkeeping / tracked secrets — **exit 1**.
 
-**Note:** Add new routes in `app/config/pages.php` only — smoke, `public/index.php`, and `komodo_sidebar_nav_keys()` (sidebar) consume that registry. Page-specific `$ctx` keys (market data, companies, etc.) are wired in `app/lib/page_context.php`.
+**Note:** Add new routes in `app/config/pages.php` only — smoke, `public/index.php`, and the sidebar consume that registry. New sidebar links belong in `komodo_sidebar_nav_groups()` (and labels in `komodo_sidebar_route_label()`); `komodo_sidebar_nav_keys()` is derived for smoke. Page-specific `$ctx` keys (market data, companies, etc.) are wired in `app/lib/page_context.php`.
 
 The core file checklist includes `app/lib/market_data_queries.php` (Market Data import coverage helpers) and `app/lib/event_queries.php` (Events list page context).
+
+---
+
+## `tools/komodo_css_check.php`
+
+**Purpose:** Keep `assets/css/style.css` maintainable — parses `@import url("…")` entries, ensures each partial exists, and fails if any `*.css` in `assets/css/` is not part of that chain (orphans). Also callable as `komodo_css_validate_bundle($repoRoot)` from smoke.
+
+```bat
+D:\Windows\xampp\php\php.exe tools\komodo_css_check.php
+D:\Windows\xampp\php\php.exe tools\komodo_css_check.php list
+```
+
+- **Adding styles:** Prefer a focused partial under `assets/css/`, then add one `@import` line in `style.css` (order = cascade order).
+- **Exit:** **0** when the chain is valid; **1** on missing imports or orphan files.
 
 ---
 
@@ -86,13 +139,15 @@ tools\check_all.bat
 
 Milestone context: [`komodo_v0_0_2_milestone.md`](komodo_v0_0_2_milestone.md) · Before price loads: [`pre_import_checklist.md`](pre_import_checklist.md)
 
+**Schema migrations (manual, not run by tools here):** e.g. [`sql/remove_data_sources.sql`](../sql/remove_data_sources.sql) — backup, review constraint names, then execute in MariaDB when approved. Import CLI scripts and the Market Data page no longer reference `data_sources`; dropping the table/columns keeps the DB aligned with the app.
+
 ---
 
 ## When to run
 
 | Timing | Scripts |
 |--------|---------|
-| After refactors / route or layout changes | `komodo_smoke.php`, `lint_all.bat`, `komodo_security_scan.php` |
+| After refactors / route or layout changes | `komodo_smoke.php`, `lint_all.bat`, `komodo_security_scan.php` (smoke includes CSS bundle check) |
 | Before commits | All of the above; fix security scan warnings or explicitly document exceptions |
 | Before heavy DB import work | `komodo_db_check.php` (confirm live/degraded/offline posture); see [`pre_import_checklist.md`](pre_import_checklist.md) |
 | Milestone / release sanity | `check_all.bat` (or run each tool individually) |

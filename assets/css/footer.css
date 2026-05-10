@@ -1,0 +1,54 @@
+﻿/* footer — main column footer + print */
+/* ——— Footer ——— */
+.site-footer {
+    border-top: 1px solid var(--border);
+    padding: 1.1rem 0 2.25rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    background: var(--bg);
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+@media (min-width: 48rem) {
+    .overview-meta-row .badge--primary {
+        margin-right: 0.15rem;
+    }
+}
+
+@media print {
+    body.komodo-dash {
+        background: #fff;
+        color: #111;
+        font-size: 11pt;
+    }
+
+    .sidebar,
+    .skip-link {
+        display: none !important;
+    }
+
+    .app-shell {
+        display: block;
+    }
+
+    .shell-main {
+        background: transparent;
+    }
+
+    .panel,
+    .overview-panel {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .stat-card:hover,
+    .kpi:hover,
+    .data-table tbody tr:hover {
+        background: inherit;
+    }
+}
